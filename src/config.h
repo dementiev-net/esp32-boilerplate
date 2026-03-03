@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.9"
+#define APP_VERSION "1.2.10"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -18,6 +18,10 @@
 /// @brief Включение fallback-файловой системы LittleFS: 1 = включен, 0 = выключен.
 #ifndef FEATURE_LITTLEFS
   #define FEATURE_LITTLEFS 0
+#endif
+/// @brief Включение USB CDC shell: 1 = включен, 0 = выключен.
+#ifndef FEATURE_USB_SHELL
+  #define FEATURE_USB_SHELL 1
 #endif
 
 // ===== SERIAL =====

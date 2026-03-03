@@ -20,6 +20,7 @@
 | Wi-Fi STA через `/wifi.conf` | ✓ (SD) | ✓ (LittleFS, опционально) | Единый формат файла |
 | OTA update | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_OTA` |
 | BLE advertising + GATT | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_BLE` |
+| USB CDC shell | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_USB_SHELL` |
 | LittleFS fallback | ○ (опционально) | ✓ (по умолчанию) | `FEATURE_LITTLEFS` |
 | NVS (Preferences) | ✓ | ✓ | `NVS_NAMESPACE=boilerplate` |
 | NTP время при интернете | ✓ | ✓ | Показывается в статусе `TIME` |
@@ -35,6 +36,7 @@
 - **Power** — измерение батареи (VBAT %) и deep sleep с пробуждением по кнопке
 - **OTA** — обновление прошивки по Wi-Fi (push OTA, без собственного сервера, опционально для lightweight-профиля)
 - **BLE** — advertising + GATT service (battery %, uptime, version, опционально для lightweight-профиля)
+- **USB shell** — минимальный командный интерфейс по CDC для диагностики и сервисных операций
 
 ## Быстрый старт
 
@@ -48,8 +50,8 @@
 
 По умолчанию в `platformio.ini` заданы такие профили:
 
-- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0` (full-профиль).
-- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1` (lightweight-профиль с файловым fallback).
+- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0`, `FEATURE_USB_SHELL=1` (full-профиль).
+- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1` (lightweight-профиль с файловым fallback).
 
 При необходимости фичи можно включать обратно через `build_flags`:
 
@@ -57,6 +59,7 @@
 -DFEATURE_OTA=1
 -DFEATURE_BLE=1
 -DFEATURE_LITTLEFS=1
+-DFEATURE_USB_SHELL=1
 ```
 
 Примечание для `lilygo-t-qt-pro`: если включаешь `FEATURE_BLE=1`, добавь `h2zero/NimBLE-Arduino@^1.4.2`
@@ -91,6 +94,9 @@
    - в Serial выводится `Wake: ...` и `Wake button: TOP GPIO...`;
    - долгий клик `BOTTOM` переводит в deep sleep;
    - пробуждение — кнопкой `TOP`.
+8. USB shell:
+   - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
+   - команда `status` печатает текущие runtime-параметры.
 
 ### T-QT Pro
 
@@ -110,6 +116,9 @@
    - в Serial выводится `Wake: ...` и `Wake button: TOP GPIO...`;
    - долгий клик `BOTTOM` переводит в deep sleep;
    - пробуждение — кнопкой `TOP`.
+8. USB shell:
+   - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
+   - команда `status` печатает текущие runtime-параметры.
 
 ## Режимы Wi-Fi через файловый конфиг (`/wifi.conf`)
 
@@ -278,6 +287,25 @@ GATT service (`BLE_SERVICE_UUID`) содержит характеристики:
 - `BLE_CHAR_UPTIME_UUID` — uptime в секундах;
 - `BLE_CHAR_VERSION_UUID` — текущая `APP_VERSION`.
 
+## USB CDC shell
+
+Минимальный shell работает через `Serial` (USB CDC) и доступен после загрузки:
+- `"[USB] CDC shell ready. Type 'help'."`
+
+Команды:
+- `help`
+- `version`
+- `status`
+- `wifi`
+- `storage`
+- `cat <path>`
+- `write <path> <text>`
+- `append <path> <text>`
+- `heap`
+- `uptime`
+- `reboot`
+- `sleep`
+
 ## Troubleshooting
 
 ### Wi-Fi portal не открывается
@@ -338,6 +366,7 @@ src/
     ├── power/
     ├── display/
     ├── time/
+    ├── usb/
     ├── wifi/
     ├── storage/
     └── buttons/

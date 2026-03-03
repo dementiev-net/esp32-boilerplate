@@ -3,6 +3,15 @@
 #include <Arduino.h>
 
 /**
+ * @brief Тип активного файлового backend.
+ */
+enum class StorageFileBackend {
+    None,
+    SdCard,
+    LittleFs
+};
+
+/**
  * @brief Инициализирует подсистему хранения: NVS и файловый backend платы.
  * @details
  * - Вызывать один раз из `setup()`.
@@ -51,6 +60,36 @@ bool sdSupported();
  * @brief Возвращает, смонтирована ли SD-карта.
  */
 bool sdAvailable();
+
+/**
+ * @brief Возвращает тип активного файлового backend.
+ * @return `StorageFileBackend::SdCard`, `StorageFileBackend::LittleFs` или `StorageFileBackend::None`.
+ * @details
+ * - Вызывать после `storageInit()`.
+ * - Неблокирующая.
+ * - Не ISR-safe.
+ */
+StorageFileBackend storageFileBackend();
+
+/**
+ * @brief Проверяет доступность активного файлового backend.
+ * @return true если backend смонтирован и готов к операциям чтения/записи.
+ * @details
+ * - Вызывать после `storageInit()`.
+ * - Неблокирующая.
+ * - Не ISR-safe.
+ */
+bool storageFileAvailable();
+
+/**
+ * @brief Возвращает короткую метку активного файлового backend.
+ * @return `"SD"`, `"LittleFS"` или `"None"`.
+ * @details
+ * - Удобно для логов/диагностики (Serial/UI/shell).
+ * - Неблокирующая.
+ * - Не ISR-safe.
+ */
+const char* storageFileBackendLabel();
 
 /**
  * @brief Читает текстовый файл из активного файлового backend.

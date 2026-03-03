@@ -12,6 +12,7 @@
 #include "modules/power/sleep.h"
 #include "modules/storage/storage.h"
 #include "modules/time/net_time.h"
+#include "modules/usb/usb_shell.h"
 #include "modules/wifi/wifi.h"
 #if FEATURE_BLE
 #include "modules/ble/ble.h"
@@ -98,7 +99,14 @@ void setup() {
     Serial.println("[OTA] Disabled by build profile");
     #endif
 
-    bootPreloaderStep(90, "Time init");
+    #if FEATURE_USB_SHELL
+    bootPreloaderStep(88, "USB shell");
+    usbShellInit();
+    #else
+    Serial.println("[USB] Shell disabled by build profile");
+    #endif
+
+    bootPreloaderStep(92, "Time init");
     netTimeInit();
 
     int bootCount = storageGetInt("boot_count", 0);
@@ -148,6 +156,9 @@ void setup() {
 void loop() {
     buttonsLoop();
     wifiLoop();
+    #if FEATURE_USB_SHELL
+    usbShellLoop();
+    #endif
     #if FEATURE_BLE
     bleLoop();
     #endif

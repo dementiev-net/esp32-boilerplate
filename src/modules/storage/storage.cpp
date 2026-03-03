@@ -18,6 +18,7 @@ static bool sdReady = false;
 static fs::FS* sdFs = nullptr;
 static bool fileReady = false;
 static fs::FS* fileFs = nullptr;
+static StorageFileBackend fileBackend = StorageFileBackend::None;
 
 struct SdIoContext {
     fs::FS* fs;
@@ -53,6 +54,18 @@ static void sdIoClose(void* ctx) {
     }
 }
 
+static const char* fileBackendToLabel(StorageFileBackend backend) {
+    switch (backend) {
+        case StorageFileBackend::SdCard:
+            return "SD";
+        case StorageFileBackend::LittleFs:
+            return "LittleFS";
+        case StorageFileBackend::None:
+        default:
+            return "None";
+    }
+}
+
 #ifndef FILE_APPEND
 #define FILE_APPEND FILE_WRITE
 #endif
@@ -72,6 +85,7 @@ void storageInit() {
     sdFs = nullptr;
     fileReady = false;
     fileFs = nullptr;
+    fileBackend = StorageFileBackend::None;
 
     const BoardProfile& board = boardGetProfile();
     if (!board.sd.supported) {
@@ -81,6 +95,7 @@ void storageInit() {
         if (LittleFS.begin(true)) {
             fileReady = true;
             fileFs = &LittleFS;
+            fileBackend = StorageFileBackend::LittleFs;
             Serial.printf(
                 "[Storage] LittleFS ready. Used: %u / %u bytes\n",
                 static_cast<unsigned>(LittleFS.usedBytes()),
@@ -104,6 +119,7 @@ void storageInit() {
             sdFs = &SD_MMC;
             fileReady = true;
             fileFs = sdFs;
+            fileBackend = StorageFileBackend::SdCard;
             Serial.printf("[Storage] SD card ready. Size: %llu MB\n", SD_MMC.cardSize() / (1024ULL * 1024ULL));
         } else {
             Serial.println("[Storage] SD card mount failed.");
@@ -120,6 +136,7 @@ void storageInit() {
         sdFs = &SD;
         fileReady = true;
         fileFs = sdFs;
+        fileBackend = StorageFileBackend::SdCard;
         Serial.println("[Storage] SD card ready.");
     } else {
         Serial.println("[Storage] SD card not found, skipping.");
@@ -168,6 +185,18 @@ bool sdSupported() {
 
 bool sdAvailable() {
     return sdReady;
+}
+
+StorageFileBackend storageFileBackend() {
+    return fileBackend;
+}
+
+bool storageFileAvailable() {
+    return fileReady;
+}
+
+const char* storageFileBackendLabel() {
+    return fileBackendToLabel(fileBackend);
 }
 
 String sdReadFile(const char* path) {
