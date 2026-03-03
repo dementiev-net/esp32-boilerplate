@@ -8,6 +8,7 @@
 #include "modules/board/board_profile.h"
 #include "modules/buttons/buttons.h"
 #include "modules/display/display.h"
+#include "modules/ota/ota.h"
 #include "modules/power/battery.h"
 #include "modules/power/sleep.h"
 #include "modules/storage/storage.h"
@@ -78,7 +79,10 @@ void setup() {
     bootPreloaderStep(70, "Wi-Fi init");
     wifiInit();
 
-    bootPreloaderStep(85, "Time init");
+    bootPreloaderStep(78, "OTA init");
+    otaInit();
+
+    bootPreloaderStep(88, "Time init");
     netTimeInit();
 
     int bootCount = storageGetInt("boot_count", 0);
@@ -128,6 +132,7 @@ void setup() {
 void loop() {
     buttonsLoop();
     wifiLoop();
+    otaLoop();
     netTimeLoop(wifiIsConnected() && !wifiIsApMode());
 
     const unsigned long nowMs = millis();

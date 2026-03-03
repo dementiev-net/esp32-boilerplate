@@ -30,6 +30,7 @@
 - **Time** — синхронизация точного времени через NTP при наличии интернета
 - **Storage** — NVS (сохранение между перезагрузками) + SD карта
 - **Power** — измерение батареи (VBAT %) и deep sleep с пробуждением по кнопке
+- **OTA** — обновление прошивки по Wi-Fi (push OTA, без собственного сервера)
 
 ## Быстрый старт
 
@@ -166,6 +167,57 @@ ap_password=12345678
   - `BATTERY_PERCENT_EMPTY_MV`
   - `BATTERY_PERCENT_FULL_MV`
 
+## OTA (без сервера)
+
+Проект использует push OTA: после первой прошивки по USB обновления можно отправлять по Wi-Fi.
+
+Что происходит в рантайме:
+- OTA сервер поднимается автоматически после подключения к сети.
+- В Serial виден статус готовности: `"[OTA] Ready: host=... ip=... port=3232"`.
+- Во время обновления печатается прогресс и ошибки.
+
+Параметры OTA в `config.h`:
+- `OTA_PORT`
+- `OTA_PASSWORD`
+- `OTA_HOSTNAME_PREFIX`
+
+Как пользоваться OTA:
+
+1. Один раз прошей плату по USB обычным способом.
+2. Подключи плату и компьютер к одной Wi-Fi сети.
+3. Открой Serial Monitor (`115200`) и дождись строки:
+   - `"[OTA] Ready: host=... ip=... port=3232"`.
+4. Возьми IP из этой строки и собери свежий `firmware.bin`.
+5. Запусти `espota.py` с этим IP, портом и паролем.
+6. После окончания OTA плата перезагрузится автоматически.
+
+Если в Serial нет `"[OTA] Ready..."`, значит OTA еще не поднят:
+- нет подключения к сети;
+- Wi-Fi в процессе reconnection;
+- неверно настроен режим Wi-Fi.
+
+Пример OTA-загрузки (T-Display-S3):
+
+```bash
+/Users/dementev/.platformio/penv/bin/pio run -e lilygo-t-display-s3
+python ~/.platformio/packages/tool-espotapy/espota.py \
+  -i 192.168.1.120 \
+  -p 3232 \
+  -a boilerplate \
+  -f .pio/build/lilygo-t-display-s3/firmware.bin
+```
+
+Пример OTA-загрузки (T-QT Pro):
+
+```bash
+/Users/dementev/.platformio/penv/bin/pio run -e lilygo-t-qt-pro
+python ~/.platformio/packages/tool-espotapy/espota.py \
+  -i 192.168.1.121 \
+  -p 3232 \
+  -a boilerplate \
+  -f .pio/build/lilygo-t-qt-pro/firmware.bin
+```
+
 ## Troubleshooting
 
 ### Wi-Fi portal не открывается
@@ -221,6 +273,7 @@ src/
 └── modules/
     ├── app/
     ├── board/
+    ├── ota/
     ├── power/
     ├── display/
     ├── time/

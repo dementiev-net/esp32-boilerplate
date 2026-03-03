@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.5"
+#define APP_VERSION "1.2.6"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -111,3 +111,11 @@
 // ===== STORAGE =====
 /// @brief Namespace для Preferences (NVS).
 #define NVS_NAMESPACE "boilerplate"
+
+// ===== OTA =====
+/// @brief Порт OTA сервера (ArduinoOTA), TCP.
+#define OTA_PORT 3232
+/// @brief Пароль OTA (рекомендуется сменить для локальной сети).
+#define OTA_PASSWORD "boilerplate"
+/// @brief Префикс hostname OTA.
+#define OTA_HOSTNAME_PREFIX "boilerplate"
