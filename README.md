@@ -18,6 +18,8 @@
 | SD карта | ✓ SDMMC 1-bit | — | В проекте SD только для T-Display-S3 |
 | Wi-Fi AP/AUTO (portal) | ✓ | ✓ | WiFiManager |
 | Wi-Fi STA через `/wifi.conf` | ✓ | — | На T-QT Pro нет SD-конфига |
+| OTA update | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_OTA` |
+| BLE advertising + GATT | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_BLE` |
 | NVS (Preferences) | ✓ | ✓ | `NVS_NAMESPACE=boilerplate` |
 | NTP время при интернете | ✓ | ✓ | Показывается в статусе `TIME` |
 | Boot preloader | ✓ | ✓ | Логотип + прогресс загрузки |
@@ -30,7 +32,8 @@
 - **Time** — синхронизация точного времени через NTP при наличии интернета
 - **Storage** — NVS (сохранение между перезагрузками) + SD карта
 - **Power** — измерение батареи (VBAT %) и deep sleep с пробуждением по кнопке
-- **OTA** — обновление прошивки по Wi-Fi (push OTA, без собственного сервера)
+- **OTA** — обновление прошивки по Wi-Fi (push OTA, без собственного сервера, опционально для lightweight-профиля)
+- **BLE** — advertising + GATT service (battery %, uptime, version, опционально для lightweight-профиля)
 
 ## Быстрый старт
 
@@ -39,6 +42,23 @@
 3. Выбрать окружение:
    - `lilygo-t-display-s3` или `lilygo-t-qt-pro`
 4. Build & Upload
+
+## Профили фич по платам
+
+По умолчанию в `platformio.ini` заданы такие профили:
+
+- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1` (full-профиль).
+- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0` (lightweight-профиль для запаса флеша).
+
+При необходимости фичи можно включать обратно через `build_flags`:
+
+```ini
+-DFEATURE_OTA=1
+-DFEATURE_BLE=1
+```
+
+Примечание для `lilygo-t-qt-pro`: если включаешь `FEATURE_BLE=1`, добавь `h2zero/NimBLE-Arduino@^1.4.2`
+в `lib_deps` этого окружения (`platformio.ini`), так как по умолчанию зависимость подключена только для `t-display-s3`.
 
 ## Первый запуск
 
@@ -170,6 +190,7 @@ ap_password=12345678
 ## OTA (без сервера)
 
 Проект использует push OTA: после первой прошивки по USB обновления можно отправлять по Wi-Fi.
+Для `lilygo-t-qt-pro` в lightweight-профиле OTA по умолчанию выключен (`FEATURE_OTA=0`).
 
 Что происходит в рантайме:
 - OTA сервер поднимается автоматически после подключения к сети.
@@ -217,6 +238,24 @@ python ~/.platformio/packages/tool-espotapy/espota.py \
   -a boilerplate \
   -f .pio/build/lilygo-t-qt-pro/firmware.bin
 ```
+
+## BLE
+
+Для `lilygo-t-qt-pro` в lightweight-профиле BLE по умолчанию выключен (`FEATURE_BLE=0`).
+
+При старте поднимается BLE advertising с именем:
+- `boilerplate-tdisplay-s3` для T-Display-S3;
+- `boilerplate-tqt-pro` для T-QT Pro.
+
+В Serial отображаются события:
+- `"[BLE] Advertising started: ..."`
+- `"[BLE] Client connected"`
+- `"[BLE] Client disconnected"`
+
+GATT service (`BLE_SERVICE_UUID`) содержит характеристики:
+- `BLE_CHAR_BATTERY_UUID` — заряд батареи в `%` (или `--` если недоступен);
+- `BLE_CHAR_UPTIME_UUID` — uptime в секундах;
+- `BLE_CHAR_VERSION_UUID` — текущая `APP_VERSION`.
 
 ## Troubleshooting
 
@@ -272,6 +311,7 @@ src/
 ├── config.h
 └── modules/
     ├── app/
+    ├── ble/
     ├── board/
     ├── ota/
     ├── power/

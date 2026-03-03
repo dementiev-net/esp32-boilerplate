@@ -2,9 +2,19 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.6"
+#define APP_VERSION "1.2.8"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
+
+// ===== FEATURES (BUILD PROFILE) =====
+/// @brief Включение OTA модуля: 1 = включен, 0 = исключен из runtime.
+#ifndef FEATURE_OTA
+  #define FEATURE_OTA 1
+#endif
+/// @brief Включение BLE модуля: 1 = включен, 0 = исключен из runtime.
+#ifndef FEATURE_BLE
+  #define FEATURE_BLE 1
+#endif
 
 // ===== SERIAL =====
 /// @brief Скорость UART (baud) для Serial Monitor.
@@ -119,3 +129,17 @@
 #define OTA_PASSWORD "boilerplate"
 /// @brief Префикс hostname OTA.
 #define OTA_HOSTNAME_PREFIX "boilerplate"
+
+// ===== BLE =====
+/// @brief Префикс BLE device name.
+#define BLE_DEVICE_NAME_PREFIX "boilerplate"
+/// @brief BLE service UUID для runtime-телеметрии.
+#define BLE_SERVICE_UUID "35f6f3e0-6e8f-4f19-a6bf-2e5f9b8f4300"
+/// @brief BLE characteristic UUID для заряда батареи (%).
+#define BLE_CHAR_BATTERY_UUID "35f6f3e1-6e8f-4f19-a6bf-2e5f9b8f4300"
+/// @brief BLE characteristic UUID для uptime (сек).
+#define BLE_CHAR_UPTIME_UUID "35f6f3e2-6e8f-4f19-a6bf-2e5f9b8f4300"
+/// @brief BLE characteristic UUID для версии приложения.
+#define BLE_CHAR_VERSION_UUID "35f6f3e3-6e8f-4f19-a6bf-2e5f9b8f4300"
+/// @brief Период публикации BLE-телеметрии, миллисекунды.
+#define BLE_TELEMETRY_UPDATE_MS 1000

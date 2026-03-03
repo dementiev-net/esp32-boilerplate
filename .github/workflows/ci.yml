@@ -37,3 +37,56 @@ jobs:
 
       - name: Build firmware
         run: pio run -e ${{ matrix.environment }}
+
+      - name: Check flash budget (lilygo-t-qt-pro)
+        if: matrix.environment == 'lilygo-t-qt-pro'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          WARN_PERCENT=75
+          FAIL_PERCENT=80
+
+          SIZE_OUTPUT="$(pio run -e ${{ matrix.environment }} -t size)"
+          echo "$SIZE_OUTPUT"
+
+          SIZE_LINE="$(echo "$SIZE_OUTPUT" | grep -Eo 'used [0-9]+ bytes from [0-9]+ bytes' | tail -n 1 || true)"
+          if [ -z "$SIZE_LINE" ]; then
+            echo "::error::Cannot parse flash size from PlatformIO output"
+            exit 1
+          fi
+
+          USED_BYTES="$(echo "$SIZE_LINE" | awk '{print $2}')"
+          TOTAL_BYTES="$(echo "$SIZE_LINE" | awk '{print $5}')"
+
+          PERCENT="$(python - <<PY
+used = int("$USED_BYTES")
+total = int("$TOTAL_BYTES")
+print((used * 100.0) / total)
+PY
+)"
+
+          echo "Flash usage: ${USED_BYTES}/${TOTAL_BYTES} bytes (${PERCENT}%)"
+
+          if python - <<PY
+percent = float("$PERCENT")
+threshold = float("$FAIL_PERCENT")
+raise SystemExit(1 if percent > threshold else 0)
+PY
+          then
+            :
+          else
+            echo "::error::Flash usage ${PERCENT}% exceeds fail threshold ${FAIL_PERCENT}%"
+            exit 1
+          fi
+
+          if python - <<PY
+percent = float("$PERCENT")
+threshold = float("$WARN_PERCENT")
+raise SystemExit(1 if percent > threshold else 0)
+PY
+          then
+            :
+          else
+            echo "::warning::Flash usage ${PERCENT}% exceeds warning threshold ${WARN_PERCENT}%"
+          fi

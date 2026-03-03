@@ -8,12 +8,17 @@
 #include "modules/board/board_profile.h"
 #include "modules/buttons/buttons.h"
 #include "modules/display/display.h"
-#include "modules/ota/ota.h"
 #include "modules/power/battery.h"
 #include "modules/power/sleep.h"
 #include "modules/storage/storage.h"
 #include "modules/time/net_time.h"
 #include "modules/wifi/wifi.h"
+#if FEATURE_BLE
+#include "modules/ble/ble.h"
+#endif
+#if FEATURE_OTA
+#include "modules/ota/ota.h"
+#endif
 
 static bool runtimeInitialized = false;
 static bool dispatcherOverflowReported = false;
@@ -79,10 +84,21 @@ void setup() {
     bootPreloaderStep(70, "Wi-Fi init");
     wifiInit();
 
-    bootPreloaderStep(78, "OTA init");
-    otaInit();
+    #if FEATURE_BLE
+    bootPreloaderStep(76, "BLE init");
+    bleInit();
+    #else
+    Serial.println("[BLE] Disabled by build profile");
+    #endif
 
-    bootPreloaderStep(88, "Time init");
+    #if FEATURE_OTA
+    bootPreloaderStep(82, "OTA init");
+    otaInit();
+    #else
+    Serial.println("[OTA] Disabled by build profile");
+    #endif
+
+    bootPreloaderStep(90, "Time init");
     netTimeInit();
 
     int bootCount = storageGetInt("boot_count", 0);
@@ -132,11 +148,19 @@ void setup() {
 void loop() {
     buttonsLoop();
     wifiLoop();
+    #if FEATURE_BLE
+    bleLoop();
+    #endif
+    #if FEATURE_OTA
     otaLoop();
+    #endif
     netTimeLoop(wifiIsConnected() && !wifiIsApMode());
 
     const unsigned long nowMs = millis();
     RuntimeSnapshot sampledState = runtimeStateRead(runtimeTracker, nowMs);
+    #if FEATURE_BLE
+    bleSetTelemetry(sampledState.batteryPercent, nowMs / 1000UL);
+    #endif
 
     if (!runtimeInitialized) {
         runtimeState = sampledState;

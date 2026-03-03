@@ -1,9 +1,10 @@
 #include "ota.h"
 
 #include <Arduino.h>
+#include "../../config.h"
+#if FEATURE_OTA
 #include <ArduinoOTA.h>
 
-#include "../../config.h"
 #include "../board/board_profile.h"
 #include "../wifi/wifi.h"
 
@@ -99,3 +100,13 @@ void otaLoop() {
 bool otaIsReady() {
     return started;
 }
+#else
+
+void otaInit() {}
+
+void otaLoop() {}
+
+bool otaIsReady() {
+    return false;
+}
+#endif
