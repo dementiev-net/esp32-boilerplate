@@ -21,7 +21,7 @@
 | OTA update | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_OTA` |
 | BLE advertising + GATT | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_BLE` |
 | USB CDC shell | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_USB_SHELL` |
-| HTTP JSON demo (internet) | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_NET_HTTP` |
+| HTTP JSON demo (internet) | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_NET_HTTP` |
 | Watchdog + reset diagnostics | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_WATCHDOG` |
 | LittleFS fallback | ○ (опционально) | ✓ (по умолчанию) | `FEATURE_LITTLEFS` |
 | NVS (Preferences) | ✓ | ✓ | `NVS_NAMESPACE=boilerplate` |
@@ -55,7 +55,7 @@
 По умолчанию в `platformio.ini` заданы такие профили:
 
 - `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1`, `FEATURE_WATCHDOG=1` (full-профиль).
-- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1`, `FEATURE_WATCHDOG=1` (lightweight-профиль с файловым fallback).
+- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=0`, `FEATURE_WATCHDOG=1` (lightweight-профиль с файловым fallback).
 
 При необходимости фичи можно включать обратно через `build_flags`:
 
@@ -105,8 +105,9 @@
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
 9. Net demo:
-   - при Wi-Fi интернете в Serial появляется строка вида `"[NET] ip=..."`;
-   - на экране над статус-панелью отображается строка `NET:...`.
+   - по умолчанию выключен (`FEATURE_NET_HTTP=0`) для экономии флеша;
+   - при включении и наличии интернета в Serial появляется `"[NET] amount=..."`,
+     а в статус-панели — строка `NET:...`.
 
 ### T-QT Pro
 
@@ -131,8 +132,8 @@
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
 9. Net demo:
-   - при Wi-Fi интернете в Serial появляется строка вида `"[NET] ip=..."`;
-   - на экране над статус-панелью отображается строка `NET:...`.
+   - при Wi-Fi интернете в Serial появляется строка вида `"[NET] amount=..."`;
+   - в нижней статус-панели отображается строка `NET:...`.
 
 ## Режимы Wi-Fi через файловый конфиг (`/wifi.conf`)
 
@@ -226,10 +227,10 @@ ap_password=12345678
 ## Net demo (HTTP JSON)
 
 - Модуль периодически выполняет HTTP GET к `NET_DEMO_URL` и извлекает строковое поле `NET_DEMO_JSON_KEY`.
-- По умолчанию используется endpoint `http://api.ipify.org/?format=json` и ключ `ip` (внешний IP).
+- По умолчанию используется endpoint `https://api.coinbase.com/v2/prices/BTC-USD/spot` и ключ `amount` (курс BTC/USD).
 - Результат выводится:
-  - в Serial: `"[NET] ip=..."`
-  - на экран: строка `NET:...` над нижней статус-панелью.
+  - в Serial: `"[NET] amount=..."`
+  - на экран: строка `NET:...` в нижней статус-панели.
 
 Параметры в `config.h`:
 - `NET_DEMO_URL`

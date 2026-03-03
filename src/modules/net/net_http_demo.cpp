@@ -1,10 +1,14 @@
 #include "net_http_demo.h"
 
 #include <Arduino.h>
-#include <HTTPClient.h>
-#include <WiFiClient.h>
 
 #include "../../config.h"
+
+#if FEATURE_NET_HTTP
+#include <HTTPClient.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
+#endif
 
 #if FEATURE_NET_HTTP
 
@@ -16,6 +20,8 @@ unsigned long lastAttemptMs = 0;
 unsigned long lastSuccessMs = 0;
 String lastValue = "-";
 String uiText = "NET:-";
+WiFiClient plainClient;
+WiFiClientSecure secureClient;
 
 String trimForUi(const String& value) {
     String trimmed = value;
@@ -93,11 +99,18 @@ void performFetch() {
     lastAttemptMs = millis();
 
     HTTPClient http;
-    WiFiClient client;
     http.setConnectTimeout(NET_DEMO_HTTP_TIMEOUT_MS);
     http.setTimeout(NET_DEMO_HTTP_TIMEOUT_MS);
+    const String url = NET_DEMO_URL;
 
-    if (!http.begin(client, NET_DEMO_URL)) {
+    bool beginOk = false;
+    if (url.startsWith("https://")) {
+        secureClient.setInsecure();
+        beginOk = http.begin(secureClient, url);
+    } else {
+        beginOk = http.begin(plainClient, url);
+    }
+    if (!beginOk) {
         lastRequestOk = false;
         updateUiText();
         Serial.println("[NET] HTTP begin failed");

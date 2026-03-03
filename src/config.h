@@ -62,9 +62,9 @@
 
 // ===== NET (HTTP JSON DEMO) =====
 /// @brief URL demo endpoint для HTTP JSON запроса.
-#define NET_DEMO_URL "http://api.ipify.org/?format=json"
+#define NET_DEMO_URL "https://api.coinbase.com/v2/prices/BTC-USD/spot"
 /// @brief JSON ключ, который извлекается из ответа endpoint.
-#define NET_DEMO_JSON_KEY "ip"
+#define NET_DEMO_JSON_KEY "amount"
 /// @brief Интервал между HTTP запросами, миллисекунды.
 #define NET_DEMO_REQUEST_INTERVAL_MS 60000
 /// @brief Таймаут HTTP подключения/чтения, миллисекунды.

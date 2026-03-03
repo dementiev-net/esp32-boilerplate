@@ -49,7 +49,7 @@ void statusPanelRender(const RuntimeSnapshot& state, bool force) {
     }
 
     const BoardProfile& board = boardGetProfile();
-    const int statusHeight = 48;
+    const int statusHeight = 60;
     const int statusY = board.display.height - statusHeight;
     const uint16_t gray = 0x7BEF;
 
@@ -69,7 +69,7 @@ void statusPanelRender(const RuntimeSnapshot& state, bool force) {
     statusLineRender(
         board,
         0,
-        statusY,
+        statusY + 0,
         String(line1Buffer),
         state.wifiConnected ? TFT_GREEN : TFT_RED,
         force
@@ -168,7 +168,7 @@ void statusPanelRender(const RuntimeSnapshot& state, bool force) {
     statusLineRender(
         board,
         4,
-        statusY - 12,
+        statusY + 48,
         netLine,
         netColor,
         force
