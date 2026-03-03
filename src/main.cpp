@@ -8,6 +8,7 @@
 #include "modules/board/board_profile.h"
 #include "modules/buttons/buttons.h"
 #include "modules/display/display.h"
+#include "modules/power/battery.h"
 #include "modules/storage/storage.h"
 #include "modules/time/net_time.h"
 #include "modules/wifi/wifi.h"
@@ -44,7 +45,10 @@ void setup() {
     bootPreloaderStep(20, "Storage init");
     storageInit();
 
-    bootPreloaderStep(35, "Buttons init");
+    bootPreloaderStep(30, "Power init");
+    batteryInit();
+
+    bootPreloaderStep(40, "Buttons init");
     buttonsInit();
 
     buttonsOnTopClick([]() {
@@ -67,12 +71,12 @@ void setup() {
         postAppEvent(AppEventType::ButtonBottomHold);
     });
 
-    bootPreloaderStep(50, "Events bind");
+    bootPreloaderStep(55, "Events bind");
 
-    bootPreloaderStep(65, "Wi-Fi init");
+    bootPreloaderStep(70, "Wi-Fi init");
     wifiInit();
 
-    bootPreloaderStep(80, "Time init");
+    bootPreloaderStep(85, "Time init");
     netTimeInit();
 
     int bootCount = storageGetInt("boot_count", 0);

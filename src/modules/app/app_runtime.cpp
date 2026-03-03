@@ -1,6 +1,7 @@
 #include "app_runtime.h"
 
 #include "../../config.h"
+#include "../power/battery.h"
 
 void appRuntimeInit() {
     appDispatcherInit();
@@ -42,6 +43,12 @@ void appRuntimePublishStateChanges(
 
     if (previous.timeSynced != current.timeSynced || previous.localTime != current.localTime) {
         appRuntimePostEvent(AppEventType::TimeUpdated);
+        needUiRefresh = true;
+    }
+
+    if (previous.batterySupported != current.batterySupported
+        || previous.batteryMillivolts != current.batteryMillivolts) {
+        appRuntimePostEvent(AppEventType::BatteryUpdated);
         needUiRefresh = true;
     }
 
@@ -113,6 +120,14 @@ AppRuntimeDrainResult appRuntimeDrainEvents(
                 );
                 break;
             case AppEventType::TimeUpdated:
+                break;
+            case AppEventType::BatteryUpdated:
+                if (runtimeState.batterySupported && runtimeState.batteryMillivolts >= 0) {
+                    const int percent = batteryMillivoltsToPercent(runtimeState.batteryMillivolts);
+                    Serial.printf("[Runtime] VBAT=%d%% (%dmV)\n", percent, runtimeState.batteryMillivolts);
+                } else {
+                    Serial.println("[Runtime] VBAT unavailable");
+                }
                 break;
             case AppEventType::UiRefreshRequested:
                 result.needUiRefresh = true;

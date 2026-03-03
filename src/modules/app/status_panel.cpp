@@ -120,14 +120,34 @@ void statusPanelRender(const RuntimeSnapshot& state, bool force) {
         );
     }
 
-    char line4Buffer[32];
-    snprintf(line4Buffer, sizeof(line4Buffer), "TIME:%s", state.localTime.c_str());
+    char line4Buffer[40];
+    const bool batteryValid = state.batterySupported && state.batteryPercent >= 0;
+    if (state.batterySupported) {
+        if (batteryValid) {
+            if (board.display.width >= 200) {
+                snprintf(line4Buffer, sizeof(line4Buffer), "TIME:%s VB:%d%%", state.localTime.c_str(), state.batteryPercent);
+            } else {
+                snprintf(line4Buffer, sizeof(line4Buffer), "T:%s B:%d%%", state.localTime.c_str(), state.batteryPercent);
+            }
+        } else if (board.display.width >= 200) {
+            snprintf(line4Buffer, sizeof(line4Buffer), "TIME:%s VB:--%%", state.localTime.c_str());
+        } else {
+            snprintf(line4Buffer, sizeof(line4Buffer), "T:%s B:--%%", state.localTime.c_str());
+        }
+    } else {
+        snprintf(line4Buffer, sizeof(line4Buffer), "TIME:%s", state.localTime.c_str());
+    }
+
+    uint16_t line4Color = state.timeSynced ? TFT_YELLOW : gray;
+    if (!state.timeSynced && batteryValid) {
+        line4Color = TFT_CYAN;
+    }
     statusLineRender(
         board,
         3,
         statusY + 36,
         String(line4Buffer),
-        state.timeSynced ? TFT_YELLOW : gray,
+        line4Color,
         force
     );
 

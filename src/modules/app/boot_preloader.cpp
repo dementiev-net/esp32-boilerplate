@@ -3,6 +3,7 @@
 #include "../../config.h"
 #include "../board/board_profile.h"
 #include "../display/display.h"
+#include <cstring>
 
 static const char* kBootLogo16[16] = {
     "................",
@@ -82,6 +83,15 @@ static void drawBootLogo(int x, int y, int scale) {
     }
 }
 
+static int centeredTextX(const BoardProfile& board, const char* text, uint8_t size) {
+    const int textWidth = static_cast<int>(strlen(text)) * 6 * size;
+    int x = (board.display.width - textWidth) / 2;
+    if (x < 0) {
+        x = 0;
+    }
+    return x;
+}
+
 static void drawStageLabel(const char* stageLabel) {
     displayFillRect(ui.stageX, ui.stageY, ui.stageW, ui.stageH, TFT_BLACK);
     displayPrint(ui.stageX, ui.stageY, stageLabel, TFT_CYAN, 1);
@@ -151,10 +161,20 @@ void bootPreloaderBegin() {
     drawBootLogo(ui.logoX, ui.logoY, ui.logoScale);
 
     if (board.display.width >= 200) {
-        displayPrint(10, ui.logoY + ui.logoSize + 6, APP_NAME " v" APP_VERSION, TFT_WHITE, 2);
+        char title[40];
+        snprintf(title, sizeof(title), APP_NAME " v" APP_VERSION);
+        displayPrint(
+            centeredTextX(board, title, 2),
+            ui.logoY + ui.logoSize + 6,
+            title,
+            TFT_WHITE,
+            2
+        );
     } else {
-        displayPrint(4, ui.logoY + ui.logoSize + 4, APP_NAME, TFT_WHITE, 1);
-        displayPrint(4, ui.logoY + ui.logoSize + 16, "v" APP_VERSION, TFT_CYAN, 1);
+        const char* title = APP_NAME;
+        const char* version = "v" APP_VERSION;
+        displayPrint(centeredTextX(board, title, 1), ui.logoY + ui.logoSize + 4, title, TFT_WHITE, 1);
+        displayPrint(centeredTextX(board, version, 1), ui.logoY + ui.logoSize + 16, version, TFT_CYAN, 1);
     }
 
     displayDrawRect(ui.barX, ui.barY, ui.barW, ui.barH, 0x7BEF);

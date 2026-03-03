@@ -14,9 +14,14 @@ enum class BoardId : uint8_t {
  * @brief GPIO-пины, используемые платой в проекте.
  */
 struct BoardPins {
+    /// @brief GPIO верхней кнопки.
     uint8_t buttonTop;
+    /// @brief GPIO нижней кнопки.
     uint8_t buttonBottom;
-    int8_t enable5vPin;
+    /// @brief GPIO включения питания/подсветки дисплея (`-1`, если не используется).
+    int8_t displayPowerPin;
+    /// @brief GPIO ADC для измерения напряжения батареи (`-1`, если не выведен).
+    int8_t batteryAdcPin;
 };
 
 /**

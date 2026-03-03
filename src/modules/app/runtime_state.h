@@ -18,6 +18,9 @@ struct RuntimeSnapshot {
     String ssid = "";
     bool timeSynced = false;
     String localTime = "--:--:--";
+    bool batterySupported = false;
+    int batteryMillivolts = -1;
+    int batteryPercent = -1;
 };
 
 /**
@@ -31,6 +34,9 @@ struct RuntimeStateTracker {
     unsigned long bottomHoldUntilMs = 0;
     String cachedUiTime = "--:--:--";
     unsigned long lastTimeUiSampleMs = 0;
+    int cachedBatteryMillivolts = -1;
+    unsigned long lastBatterySampleMs = 0;
+    bool batterySampleInitialized = false;
 };
 
 /**
@@ -78,6 +84,7 @@ void runtimeStateActivateBottomHold(RuntimeStateTracker& tracker, unsigned long 
  * - Побочные эффекты: обновляет внутренний кэш времени (`cachedUiTime`, `lastTimeUiSampleMs`).
  * - Для TIME обновляет кэш не чаще 1 раза в секунду (1 Hz).
  * - Ограничения по платам: поле `sdSupported` зависит от board profile (`false` на T-QT Pro).
+ * - Для VBAT обновляет кэш не чаще `BATTERY_SAMPLE_INTERVAL_MS`.
  * - Не ISR-safe.
  */
 RuntimeSnapshot runtimeStateRead(RuntimeStateTracker& tracker, unsigned long nowMs);

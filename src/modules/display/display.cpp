@@ -8,9 +8,9 @@ void displayInit() {
     Serial.println("[Display] Initializing...");
 
     const BoardProfile& board = boardGetProfile();
-    if (board.pins.enable5vPin >= 0) {
-        pinMode(board.pins.enable5vPin, OUTPUT);
-        digitalWrite(board.pins.enable5vPin, HIGH);
+    if (board.pins.displayPowerPin >= 0) {
+        pinMode(board.pins.displayPowerPin, OUTPUT);
+        digitalWrite(board.pins.displayPowerPin, HIGH);
         delay(100);
     }
 

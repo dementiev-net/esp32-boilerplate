@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.0"
+#define APP_VERSION "1.2.5"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -38,6 +38,22 @@
 /// @brief Минимальное время показа boot-заставки, миллисекунды.
 #define BOOT_SPLASH_MIN_MS 1800
 
+// ===== BATTERY =====
+/// @brief Период выборки напряжения батареи в runtime, миллисекунды.
+#define BATTERY_SAMPLE_INTERVAL_MS 3000
+/// @brief Минимально валидное напряжение батареи, милливольты.
+#define BATTERY_MIN_VALID_MV 2500
+/// @brief Максимально валидное напряжение батареи, милливольты.
+#define BATTERY_MAX_VALID_MV 4300
+/// @brief Коэффициент делителя для пересчета ADC -> VBAT (числитель).
+#define BATTERY_DIVIDER_NUM 2
+/// @brief Коэффициент делителя для пересчета ADC -> VBAT (знаменатель).
+#define BATTERY_DIVIDER_DEN 1
+/// @brief Напряжение пустой Li-ion батареи для расчета процента, милливольты.
+#define BATTERY_PERCENT_EMPTY_MV 3300
+/// @brief Напряжение полной Li-ion батареи для расчета процента, милливольты.
+#define BATTERY_PERCENT_FULL_MV 4200
+
 #ifdef BOARD_TDISPLAY_S3
   /// @brief Ширина экрана в пикселях (landscape).
   #define SCREEN_WIDTH    320
@@ -53,9 +69,7 @@
   /// @brief Высота экрана в пикселях.
   #define SCREEN_HEIGHT   128
   /// @brief Поворот дисплея для TFT_eSPI.
-  #define SCREEN_ROTATION 0
-  /// @brief Пин включения питания 5V для платы T-QT Pro.
-  #define PIN_ENABLE5V    4
+  #define SCREEN_ROTATION 2
 #endif
 
 // ===== BUTTONS =====

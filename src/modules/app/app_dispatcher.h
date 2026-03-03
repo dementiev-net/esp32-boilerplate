@@ -19,6 +19,7 @@ enum class AppEventType : uint8_t {
     WifiIdentityChanged,
     SdStateChanged,
     TimeUpdated,
+    BatteryUpdated,
     UiRefreshRequested
 };
 
