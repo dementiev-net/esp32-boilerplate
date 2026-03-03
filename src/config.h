@@ -35,6 +35,9 @@
 #define NTP_VALID_UNIX_TS 1700000000UL
 
 // ===== DISPLAY =====
+/// @brief Минимальное время показа boot-заставки, миллисекунды.
+#define BOOT_SPLASH_MIN_MS 1800
+
 #ifdef BOARD_TDISPLAY_S3
   /// @brief Ширина экрана в пикселях (landscape).
   #define SCREEN_WIDTH    320
