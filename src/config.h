@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.8"
+#define APP_VERSION "1.2.9"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -14,6 +14,10 @@
 /// @brief Включение BLE модуля: 1 = включен, 0 = исключен из runtime.
 #ifndef FEATURE_BLE
   #define FEATURE_BLE 1
+#endif
+/// @brief Включение fallback-файловой системы LittleFS: 1 = включен, 0 = выключен.
+#ifndef FEATURE_LITTLEFS
+  #define FEATURE_LITTLEFS 0
 #endif
 
 // ===== SERIAL =====

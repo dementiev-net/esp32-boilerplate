@@ -3,6 +3,9 @@
 #include "../../config.h"
 #include "../board/board_profile.h"
 #include <FS.h>
+#if FEATURE_LITTLEFS
+#include <LittleFS.h>
+#endif
 #include <Preferences.h>
 #include <SD_MMC.h>
 #include <SD.h>
@@ -13,6 +16,8 @@ static Preferences prefs;
 static bool nvsReady = false;
 static bool sdReady = false;
 static fs::FS* sdFs = nullptr;
+static bool fileReady = false;
+static fs::FS* fileFs = nullptr;
 
 struct SdIoContext {
     fs::FS* fs;
@@ -63,9 +68,30 @@ void storageInit() {
         Serial.println("[Storage] NVS init failed.");
     }
 
+    sdReady = false;
+    sdFs = nullptr;
+    fileReady = false;
+    fileFs = nullptr;
+
     const BoardProfile& board = boardGetProfile();
     if (!board.sd.supported) {
         Serial.println("[Storage] SD is not supported on this board.");
+#if FEATURE_LITTLEFS
+        Serial.println("[Storage] Initializing LittleFS fallback...");
+        if (LittleFS.begin(true)) {
+            fileReady = true;
+            fileFs = &LittleFS;
+            Serial.printf(
+                "[Storage] LittleFS ready. Used: %u / %u bytes\n",
+                static_cast<unsigned>(LittleFS.usedBytes()),
+                static_cast<unsigned>(LittleFS.totalBytes())
+            );
+        } else {
+            Serial.println("[Storage] LittleFS mount failed.");
+        }
+#else
+        Serial.println("[Storage] LittleFS fallback is disabled by build profile.");
+#endif
         return;
     }
 
@@ -76,6 +102,8 @@ void storageInit() {
         } else if (SD_MMC.begin("/sdcard", true, false, SDMMC_FREQ_DEFAULT)) {
             sdReady = true;
             sdFs = &SD_MMC;
+            fileReady = true;
+            fileFs = sdFs;
             Serial.printf("[Storage] SD card ready. Size: %llu MB\n", SD_MMC.cardSize() / (1024ULL * 1024ULL));
         } else {
             Serial.println("[Storage] SD card mount failed.");
@@ -90,6 +118,8 @@ void storageInit() {
     if (SD.begin(SD_CS)) {
         sdReady = true;
         sdFs = &SD;
+        fileReady = true;
+        fileFs = sdFs;
         Serial.println("[Storage] SD card ready.");
     } else {
         Serial.println("[Storage] SD card not found, skipping.");
@@ -141,8 +171,8 @@ bool sdAvailable() {
 }
 
 String sdReadFile(const char* path) {
-    if (!sdReady || sdFs == nullptr) return "";
-    File file = sdFs->open(path);
+    if (!fileReady || fileFs == nullptr) return "";
+    File file = fileFs->open(path);
     if (!file) {
         Serial.printf("[Storage] Failed to open file: %s\n", path);
         return "";
@@ -156,8 +186,8 @@ String sdReadFile(const char* path) {
 }
 
 bool sdWriteFile(const char* path, const char* content) {
-    if (!sdReady || sdFs == nullptr) return false;
-    SdIoContext ctx = { sdFs, File() };
+    if (!fileReady || fileFs == nullptr) return false;
+    SdIoContext ctx = { fileFs, File() };
     StorageIo io = { sdIoExists, sdIoRemove, sdIoOpenWrite, sdIoWriteText, sdIoClose, &ctx };
     StorageIoResult result = storageWriteText(&io, path, content, StorageWriteMode::Overwrite);
     if (result == StorageIoResult::Ok) {
@@ -168,8 +198,8 @@ bool sdWriteFile(const char* path, const char* content) {
 }
 
 bool sdAppendFile(const char* path, const char* content) {
-    if (!sdReady || sdFs == nullptr) return false;
-    SdIoContext ctx = { sdFs, File() };
+    if (!fileReady || fileFs == nullptr) return false;
+    SdIoContext ctx = { fileFs, File() };
     StorageIo io = { sdIoExists, sdIoRemove, sdIoOpenWrite, sdIoWriteText, sdIoClose, &ctx };
     StorageIoResult result = storageWriteText(&io, path, content, StorageWriteMode::Append);
     if (result == StorageIoResult::Ok) {

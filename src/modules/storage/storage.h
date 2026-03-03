@@ -3,8 +3,13 @@
 #include <Arduino.h>
 
 /**
- * @brief Инициализирует подсистему хранения: NVS и SD (если поддерживается платой).
- * @details Вызывать один раз из setup(). Не ISR-safe.
+ * @brief Инициализирует подсистему хранения: NVS и файловый backend платы.
+ * @details
+ * - Вызывать один раз из `setup()`.
+ * - Для плат с SD (T-Display-S3) поднимается SD backend.
+ * - Для плат без SD (T-QT Pro) при `FEATURE_LITTLEFS=1` поднимается LittleFS fallback.
+ * - Неблокирующая, но содержит операции монтирования ФС.
+ * - Не ISR-safe.
  */
 void storageInit();
 
@@ -48,19 +53,31 @@ bool sdSupported();
 bool sdAvailable();
 
 /**
- * @brief Читает текстовый файл с SD.
- * @return Содержимое файла или пустую строку при ошибке.
+ * @brief Читает текстовый файл из активного файлового backend.
+ * @return Содержимое файла или пустую строку при ошибке/отсутствии backend.
+ * @details
+ * - На T-Display-S3 читает с SD.
+ * - На T-QT Pro при `FEATURE_LITTLEFS=1` читает из LittleFS.
+ * - Не ISR-safe.
  */
 String sdReadFile(const char* path);
 
 /**
- * @brief Перезаписывает файл целиком (truncate + write).
+ * @brief Перезаписывает файл целиком (truncate + write) в активном backend.
  * @return true при успешной записи.
+ * @details
+ * - На T-Display-S3 пишет на SD.
+ * - На T-QT Pro при `FEATURE_LITTLEFS=1` пишет в LittleFS.
+ * - Не ISR-safe.
  */
 bool sdWriteFile(const char* path, const char* content);
 
 /**
- * @brief Дописывает текст в конец файла.
+ * @brief Дописывает текст в конец файла в активном backend.
  * @return true при успешной записи.
+ * @details
+ * - На T-Display-S3 пишет на SD.
+ * - На T-QT Pro при `FEATURE_LITTLEFS=1` пишет в LittleFS.
+ * - Не ISR-safe.
  */
 bool sdAppendFile(const char* path, const char* content);

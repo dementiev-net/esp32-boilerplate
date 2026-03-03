@@ -17,9 +17,10 @@
 | Кнопки | ✓ `TOP=GPIO14`, `BOTTOM=GPIO0` | ✓ `TOP=GPIO0`, `BOTTOM=GPIO47` | Click / LongPress / Hold |
 | SD карта | ✓ SDMMC 1-bit | — | В проекте SD только для T-Display-S3 |
 | Wi-Fi AP/AUTO (portal) | ✓ | ✓ | WiFiManager |
-| Wi-Fi STA через `/wifi.conf` | ✓ | — | На T-QT Pro нет SD-конфига |
+| Wi-Fi STA через `/wifi.conf` | ✓ (SD) | ✓ (LittleFS, опционально) | Единый формат файла |
 | OTA update | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_OTA` |
 | BLE advertising + GATT | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_BLE` |
+| LittleFS fallback | ○ (опционально) | ✓ (по умолчанию) | `FEATURE_LITTLEFS` |
 | NVS (Preferences) | ✓ | ✓ | `NVS_NAMESPACE=boilerplate` |
 | NTP время при интернете | ✓ | ✓ | Показывается в статусе `TIME` |
 | Boot preloader | ✓ | ✓ | Логотип + прогресс загрузки |
@@ -30,7 +31,7 @@
 - **WiFi** — автоподключение + неблокирующий портал настройки (WifiManager)
 - **Buttons** — обработка клика, долгого нажатия и удерживания (hold repeat)
 - **Time** — синхронизация точного времени через NTP при наличии интернета
-- **Storage** — NVS (сохранение между перезагрузками) + SD карта
+- **Storage** — NVS + файловый backend: SD (T-Display-S3) или LittleFS fallback (T-QT Pro)
 - **Power** — измерение батареи (VBAT %) и deep sleep с пробуждением по кнопке
 - **OTA** — обновление прошивки по Wi-Fi (push OTA, без собственного сервера, опционально для lightweight-профиля)
 - **BLE** — advertising + GATT service (battery %, uptime, version, опционально для lightweight-профиля)
@@ -47,14 +48,15 @@
 
 По умолчанию в `platformio.ini` заданы такие профили:
 
-- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1` (full-профиль).
-- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0` (lightweight-профиль для запаса флеша).
+- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0` (full-профиль).
+- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1` (lightweight-профиль с файловым fallback).
 
 При необходимости фичи можно включать обратно через `build_flags`:
 
 ```ini
 -DFEATURE_OTA=1
 -DFEATURE_BLE=1
+-DFEATURE_LITTLEFS=1
 ```
 
 Примечание для `lilygo-t-qt-pro`: если включаешь `FEATURE_BLE=1`, добавь `h2zero/NimBLE-Arduino@^1.4.2`
@@ -109,9 +111,12 @@
    - долгий клик `BOTTOM` переводит в deep sleep;
    - пробуждение — кнопкой `TOP`.
 
-## Режимы Wi-Fi через SD-конфиг (T-Display-S3)
+## Режимы Wi-Fi через файловый конфиг (`/wifi.conf`)
 
-Для `lilygo-t-display-s3` можно задать режим Wi-Fi через файл `/wifi.conf` на SD-карте.
+Можно задать режим Wi-Fi через файл `/wifi.conf`:
+- `lilygo-t-display-s3`: файл читается с SD-карты.
+- `lilygo-t-qt-pro`: файл читается из LittleFS (если `FEATURE_LITTLEFS=1`).
+
 Если файла нет, используется поведение по умолчанию (`AUTO` через WiFiManager).
 
 Пример `wifi.conf`:
@@ -138,13 +143,29 @@ ap_password=12345678
 | `ap_ssid` | SSID точки доступа для `mode=ap` | нет |
 | `ap_password` | Пароль AP (минимум 8 символов) | нет |
 
+Где размещать `wifi.conf`:
+- `lilygo-t-display-s3`: в корне SD-карты (`/wifi.conf`).
+- `lilygo-t-qt-pro`: в `data/wifi.conf`, затем загрузить FS-образ:
+
+```bash
+/Users/dementev/.platformio/penv/bin/pio run -e lilygo-t-qt-pro -t uploadfs
+```
+
+## LittleFS (T-QT Pro)
+
+- В `lilygo-t-qt-pro` включен `board_build.filesystem = littlefs`.
+- При старте `storage` монтирует LittleFS автоматически как fallback-файловую систему.
+- API `sdReadFile`/`sdWriteFile`/`sdAppendFile` работает через активный backend:
+  - SD на T-Display-S3;
+  - LittleFS на T-QT Pro.
+
 ## SD карта
 
 - `lilygo-t-display-s3`:
   - поддерживается через SDMMC 1-bit (`CMD=GPIO13`, `CLK=GPIO11`, `D0=GPIO12`);
   - рекомендуемый формат карты: `FAT32 (MBR)`, не `exFAT`.
 - `lilygo-t-qt-pro`:
-  - SD карта в проекте не используется (`SD:N/A` на экране).
+  - SD карта в проекте не используется (`SD:N/A` на экране), вместо нее используется LittleFS fallback.
 
 ## Статус на экране
 
@@ -281,7 +302,7 @@ GATT service (`BLE_SERVICE_UUID`) содержит характеристики:
 
 ### SD карта не определяется (`SD:NO`)
 
-1. Для `lilygo-t-qt-pro` это ожидаемо: SD в проекте не используется (`SD:N/A`).
+1. Для `lilygo-t-qt-pro` это ожидаемо: SD в проекте не используется (`SD:N/A`), используется LittleFS fallback.
 2. Для `lilygo-t-display-s3` проверь формат карты:
    - `FAT32 (MBR)`;
    - не `exFAT`.

@@ -5,7 +5,9 @@
 /**
  * @brief Инициализирует Wi-Fi в режиме AUTO/AP/STA.
  * @details
- * - Для плат с SD сначала пытается прочитать /wifi.conf.
+ * - Сначала пытается прочитать `/wifi.conf` из активного файлового backend.
+ * - T-Display-S3: файл читается с SD.
+ * - T-QT Pro: при `FEATURE_LITTLEFS=1` файл читается из LittleFS.
  * - При отсутствии валидного конфига использует AUTO (WiFiManager).
  * @note Вызывать один раз из setup(). Не ISR-safe.
  */

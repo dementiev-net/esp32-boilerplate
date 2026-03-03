@@ -12,8 +12,7 @@ static unsigned long lastStaReconnectMs = 0;
 
 static const unsigned long STA_RECONNECT_INTERVAL_MS = 5000;
 
-static bool loadWifiConfigFromSd(WifiConfigData& out) {
-    if (!sdSupported()) return false;
+static bool loadWifiConfigFromFileStorage(WifiConfigData& out) {
     String configRaw = sdReadFile(WIFI_CONFIG_FILE);
     if (configRaw.length() == 0) return false;
     WifiConfigDefaults defaults = { WIFI_AP_NAME, WIFI_AP_PASSWORD };
@@ -60,8 +59,8 @@ void wifiInit() {
     Serial.println("[WiFi] Initializing...");
 
     WifiConfigData fileConfig;
-    // Приоритет: явный режим из /wifi.conf (если SD доступна и конфиг валиден).
-    if (loadWifiConfigFromSd(fileConfig)) {
+    // Приоритет: явный режим из /wifi.conf (если файл доступен и конфиг валиден).
+    if (loadWifiConfigFromFileStorage(fileConfig)) {
         runtimeMode = fileConfig.mode;
 
         if (runtimeMode == WifiConfigMode::AP) {
