@@ -18,6 +18,10 @@ struct RuntimeSnapshot {
     String ssid = "";
     bool timeSynced = false;
     String localTime = "--:--:--";
+    bool netEnabled = false;
+    bool netLastRequestOk = false;
+    String netValue = "-";
+    String netUiText = "NET:-";
     bool batterySupported = false;
     int batteryMillivolts = -1;
     int batteryPercent = -1;

@@ -21,6 +21,7 @@
 | OTA update | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_OTA` |
 | BLE advertising + GATT | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_BLE` |
 | USB CDC shell | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_USB_SHELL` |
+| HTTP JSON demo (internet) | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_NET_HTTP` |
 | LittleFS fallback | ○ (опционально) | ✓ (по умолчанию) | `FEATURE_LITTLEFS` |
 | NVS (Preferences) | ✓ | ✓ | `NVS_NAMESPACE=boilerplate` |
 | NTP время при интернете | ✓ | ✓ | Показывается в статусе `TIME` |
@@ -37,6 +38,7 @@
 - **OTA** — обновление прошивки по Wi-Fi (push OTA, без собственного сервера, опционально для lightweight-профиля)
 - **BLE** — advertising + GATT service (battery %, uptime, version, опционально для lightweight-профиля)
 - **USB shell** — минимальный командный интерфейс по CDC для диагностики и сервисных операций
+- **Net demo** — периодический HTTP JSON запрос из интернета и вывод значения на экран/в Serial
 
 ## Быстрый старт
 
@@ -50,8 +52,8 @@
 
 По умолчанию в `platformio.ini` заданы такие профили:
 
-- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0`, `FEATURE_USB_SHELL=1` (full-профиль).
-- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1` (lightweight-профиль с файловым fallback).
+- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1` (full-профиль).
+- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1` (lightweight-профиль с файловым fallback).
 
 При необходимости фичи можно включать обратно через `build_flags`:
 
@@ -60,6 +62,7 @@
 -DFEATURE_BLE=1
 -DFEATURE_LITTLEFS=1
 -DFEATURE_USB_SHELL=1
+-DFEATURE_NET_HTTP=1
 ```
 
 Примечание для `lilygo-t-qt-pro`: если включаешь `FEATURE_BLE=1`, добавь `h2zero/NimBLE-Arduino@^1.4.2`
@@ -97,6 +100,9 @@
 8. USB shell:
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
+9. Net demo:
+   - при Wi-Fi интернете в Serial появляется строка вида `"[NET] ip=..."`;
+   - на экране над статус-панелью отображается строка `NET:...`.
 
 ### T-QT Pro
 
@@ -119,6 +125,9 @@
 8. USB shell:
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
+9. Net demo:
+   - при Wi-Fi интернете в Serial появляется строка вида `"[NET] ip=..."`;
+   - на экране над статус-панелью отображается строка `NET:...`.
 
 ## Режимы Wi-Fi через файловый конфиг (`/wifi.conf`)
 
@@ -187,6 +196,7 @@ ap_password=12345678
 - `IP:...` - IP в `STA`, `AP:<ssid>` в `AP`.
 - `TIME:HH:MM:SS` - локальное время после NTP-синхронизации (`--:--:--` до синхронизации).
 - `VB:xx%` - оценка заряда батареи в процентах (если ADC батареи доступен на плате).
+- `NET:...` - результат demo HTTP JSON запроса (`NET:OFF` без интернета, `NET:ERR` при ошибке).
 
 ## Кнопки (hold repeat)
 
@@ -207,6 +217,21 @@ ap_password=12345678
   - `NTP_TIMEZONE`
   - `NTP_SERVER_1`, `NTP_SERVER_2`, `NTP_SERVER_3`
   - `NTP_RETRY_MS`
+
+## Net demo (HTTP JSON)
+
+- Модуль периодически выполняет HTTP GET к `NET_DEMO_URL` и извлекает строковое поле `NET_DEMO_JSON_KEY`.
+- По умолчанию используется endpoint `http://api.ipify.org/?format=json` и ключ `ip` (внешний IP).
+- Результат выводится:
+  - в Serial: `"[NET] ip=..."`
+  - на экран: строка `NET:...` над нижней статус-панелью.
+
+Параметры в `config.h`:
+- `NET_DEMO_URL`
+- `NET_DEMO_JSON_KEY`
+- `NET_DEMO_REQUEST_INTERVAL_MS`
+- `NET_DEMO_HTTP_TIMEOUT_MS`
+- `NET_DEMO_UI_MAX_VALUE_LEN`
 
 ## Энергосбережение
 
@@ -297,6 +322,7 @@ GATT service (`BLE_SERVICE_UUID`) содержит характеристики:
 - `version`
 - `status`
 - `wifi`
+- `net`
 - `storage`
 - `cat <path>`
 - `write <path> <text>`
@@ -367,6 +393,7 @@ src/
     ├── display/
     ├── time/
     ├── usb/
+    ├── net/
     ├── wifi/
     ├── storage/
     └── buttons/

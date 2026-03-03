@@ -4,6 +4,7 @@
 #include "../buttons/buttons.h"
 #include "../power/battery.h"
 #include "../storage/storage.h"
+#include "../net/net_http_demo.h"
 #include "../time/net_time.h"
 #include "../wifi/wifi.h"
 
@@ -43,6 +44,10 @@ RuntimeSnapshot runtimeStateRead(RuntimeStateTracker& tracker, unsigned long now
     state.ip = state.wifiConnected ? wifiGetIP() : "-";
     state.ssid = wifiGetSSID();
     state.timeSynced = netTimeIsSynced();
+    state.netEnabled = netDemoIsEnabled();
+    state.netLastRequestOk = netDemoLastRequestOk();
+    state.netValue = netDemoGetValue();
+    state.netUiText = netDemoGetUiText();
     state.batterySupported = batteryIsSupported();
 
     if (!state.timeSynced) {
@@ -81,6 +86,10 @@ bool runtimeStateEquals(const RuntimeSnapshot& a, const RuntimeSnapshot& b) {
         && a.ssid == b.ssid
         && a.timeSynced == b.timeSynced
         && a.localTime == b.localTime
+        && a.netEnabled == b.netEnabled
+        && a.netLastRequestOk == b.netLastRequestOk
+        && a.netValue == b.netValue
+        && a.netUiText == b.netUiText
         && a.batterySupported == b.batterySupported
         && a.batteryMillivolts == b.batteryMillivolts
         && a.batteryPercent == b.batteryPercent;

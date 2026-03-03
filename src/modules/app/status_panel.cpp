@@ -11,7 +11,7 @@ struct StatusLineCache {
 
 static bool panelInitialized = false;
 static RuntimeSnapshot lastRenderedState;
-static StatusLineCache lineCache[4];
+static StatusLineCache lineCache[5];
 
 static void statusLineRender(
     const BoardProfile& board,
@@ -36,7 +36,7 @@ static void statusLineRender(
 
 void statusPanelReset() {
     panelInitialized = false;
-    for (uint8_t i = 0; i < 4; i++) {
+    for (uint8_t i = 0; i < 5; i++) {
         lineCache[i].initialized = false;
         lineCache[i].text = "";
         lineCache[i].color = TFT_WHITE;
@@ -148,6 +148,29 @@ void statusPanelRender(const RuntimeSnapshot& state, bool force) {
         statusY + 36,
         String(line4Buffer),
         line4Color,
+        force
+    );
+
+    String netLine = state.netUiText;
+    uint16_t netColor = 0x7BEF;
+    if (!state.netEnabled) {
+        netLine = "NET:OFF";
+    } else if (!state.wifiConnected || state.modeLabel == "AP") {
+        netLine = "NET:OFF";
+    } else if (state.netLastRequestOk) {
+        netColor = TFT_GREEN;
+    } else if (state.netUiText == "NET:-") {
+        netColor = 0x7BEF;
+    } else {
+        netColor = 0xFD20;
+    }
+
+    statusLineRender(
+        board,
+        4,
+        statusY - 12,
+        netLine,
+        netColor,
         force
     );
 

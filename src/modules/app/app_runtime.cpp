@@ -46,6 +46,14 @@ void appRuntimePublishStateChanges(
         needUiRefresh = true;
     }
 
+    if (previous.netEnabled != current.netEnabled
+        || previous.netLastRequestOk != current.netLastRequestOk
+        || previous.netValue != current.netValue
+        || previous.netUiText != current.netUiText) {
+        appRuntimePostEvent(AppEventType::NetUpdated);
+        needUiRefresh = true;
+    }
+
     if (previous.batterySupported != current.batterySupported
         || previous.batteryMillivolts != current.batteryMillivolts) {
         appRuntimePostEvent(AppEventType::BatteryUpdated);
@@ -125,6 +133,15 @@ AppRuntimeDrainResult appRuntimeDrainEvents(
                 );
                 break;
             case AppEventType::TimeUpdated:
+                break;
+            case AppEventType::NetUpdated:
+                Serial.printf(
+                    "[Runtime] NET enabled=%d ok=%d value=%s ui=%s\n",
+                    runtimeState.netEnabled ? 1 : 0,
+                    runtimeState.netLastRequestOk ? 1 : 0,
+                    runtimeState.netValue.c_str(),
+                    runtimeState.netUiText.c_str()
+                );
                 break;
             case AppEventType::BatteryUpdated:
                 if (runtimeState.batterySupported && runtimeState.batteryMillivolts >= 0) {

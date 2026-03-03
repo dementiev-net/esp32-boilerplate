@@ -8,6 +8,7 @@
 #include "modules/board/board_profile.h"
 #include "modules/buttons/buttons.h"
 #include "modules/display/display.h"
+#include "modules/net/net_http_demo.h"
 #include "modules/power/battery.h"
 #include "modules/power/sleep.h"
 #include "modules/storage/storage.h"
@@ -109,6 +110,13 @@ void setup() {
     bootPreloaderStep(92, "Time init");
     netTimeInit();
 
+    #if FEATURE_NET_HTTP
+    bootPreloaderStep(96, "Net demo");
+    netDemoInit();
+    #else
+    Serial.println("[NET] HTTP demo disabled by build profile");
+    #endif
+
     int bootCount = storageGetInt("boot_count", 0);
     bootCount++;
     storageSetInt("boot_count", bootCount);
@@ -166,6 +174,7 @@ void loop() {
     otaLoop();
     #endif
     netTimeLoop(wifiIsConnected() && !wifiIsApMode());
+    netDemoLoop(wifiIsConnected() && !wifiIsApMode());
 
     const unsigned long nowMs = millis();
     RuntimeSnapshot sampledState = runtimeStateRead(runtimeTracker, nowMs);

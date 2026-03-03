@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.10"
+#define APP_VERSION "1.2.11"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -22,6 +22,10 @@
 /// @brief Включение USB CDC shell: 1 = включен, 0 = выключен.
 #ifndef FEATURE_USB_SHELL
   #define FEATURE_USB_SHELL 1
+#endif
+/// @brief Включение demo HTTP JSON клиента: 1 = включен, 0 = исключен из runtime.
+#ifndef FEATURE_NET_HTTP
+  #define FEATURE_NET_HTTP 1
 #endif
 
 // ===== SERIAL =====
@@ -51,6 +55,18 @@
 #define NTP_RETRY_MS 15000
 /// @brief Минимальный UNIX timestamp для признания времени валидным.
 #define NTP_VALID_UNIX_TS 1700000000UL
+
+// ===== NET (HTTP JSON DEMO) =====
+/// @brief URL demo endpoint для HTTP JSON запроса.
+#define NET_DEMO_URL "http://api.ipify.org/?format=json"
+/// @brief JSON ключ, который извлекается из ответа endpoint.
+#define NET_DEMO_JSON_KEY "ip"
+/// @brief Интервал между HTTP запросами, миллисекунды.
+#define NET_DEMO_REQUEST_INTERVAL_MS 60000
+/// @brief Таймаут HTTP подключения/чтения, миллисекунды.
+#define NET_DEMO_HTTP_TIMEOUT_MS 2500
+/// @brief Максимальная длина значения в UI (после префикса `NET:`), символы.
+#define NET_DEMO_UI_MAX_VALUE_LEN 18
 
 // ===== DISPLAY =====
 /// @brief Минимальное время показа boot-заставки, миллисекунды.

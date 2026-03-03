@@ -6,6 +6,7 @@
 #if FEATURE_USB_SHELL
 #include "../ble/ble.h"
 #include "../board/board_profile.h"
+#include "../net/net_http_demo.h"
 #include "../ota/ota.h"
 #include "../power/sleep.h"
 #include "../storage/storage.h"
@@ -25,6 +26,7 @@ static void printHelp() {
     Serial.println("  version                  - версия приложения");
     Serial.println("  status                   - общий статус runtime");
     Serial.println("  wifi                     - статус Wi-Fi");
+    Serial.println("  net                      - статус HTTP JSON demo");
     Serial.println("  storage                  - статус файлового backend");
     Serial.println("  cat <path>               - прочитать файл");
     Serial.println("  write <path> <text>      - перезаписать файл");
@@ -56,16 +58,35 @@ static void printStorageStatus() {
     );
 }
 
+static void printNetStatus() {
+    const unsigned long nowMs = millis();
+    const unsigned long lastAttempt = netDemoLastAttemptMs();
+    const unsigned long lastSuccess = netDemoLastSuccessMs();
+    const unsigned long ageAttempt = lastAttempt == 0 ? 0 : (nowMs - lastAttempt) / 1000UL;
+    const unsigned long ageSuccess = lastSuccess == 0 ? 0 : (nowMs - lastSuccess) / 1000UL;
+
+    Serial.printf(
+        "[net] enabled=%s ok=%s value=%s ui=%s last_attempt=%lus last_success=%lus\n",
+        netDemoIsEnabled() ? "yes" : "no",
+        netDemoLastRequestOk() ? "yes" : "no",
+        netDemoGetValue().c_str(),
+        netDemoGetUiText().c_str(),
+        ageAttempt,
+        ageSuccess
+    );
+}
+
 static void printRuntimeStatus() {
     const BoardProfile& board = boardGetProfile();
     Serial.printf("[app] %s v%s\n", APP_NAME, APP_VERSION);
     Serial.printf("[board] %s\n", board.label);
     Serial.printf(
-        "[features] ota=%u ble=%u littlefs=%u usb_shell=%u\n",
+        "[features] ota=%u ble=%u littlefs=%u usb_shell=%u net_http=%u\n",
         static_cast<unsigned>(FEATURE_OTA),
         static_cast<unsigned>(FEATURE_BLE),
         static_cast<unsigned>(FEATURE_LITTLEFS),
-        static_cast<unsigned>(FEATURE_USB_SHELL)
+        static_cast<unsigned>(FEATURE_USB_SHELL),
+        static_cast<unsigned>(FEATURE_NET_HTTP)
     );
     Serial.printf(
         "[system] uptime=%lu s heap_free=%u bytes wake=%s wake_pin=%d\n",
@@ -75,6 +96,7 @@ static void printRuntimeStatus() {
         sleepWakeButtonPin()
     );
     printWifiStatus();
+    printNetStatus();
     printStorageStatus();
     Serial.printf(
         "[wireless] ota_ready=%s ble_ready=%s ble_client=%s\n",
@@ -188,6 +210,10 @@ static void executeCommand(const String& rawLine) {
         printWifiStatus();
         return;
     }
+    if (cmdLower == "net") {
+        printNetStatus();
+        return;
+    }
     if (cmdLower == "storage") {
         printStorageStatus();
         return;
@@ -273,4 +299,3 @@ void usbShellInit() {}
 
 void usbShellLoop() {}
 #endif
-
