@@ -8,6 +8,9 @@
 #include <HTTPClient.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+#include <freertos/task.h>
 #endif
 
 #if FEATURE_NET_HTTP
@@ -20,8 +23,14 @@ unsigned long lastAttemptMs = 0;
 unsigned long lastSuccessMs = 0;
 String lastValue = "-";
 String uiText = "NET:-";
+bool fetchInProgress = false;
 WiFiClient plainClient;
 WiFiClientSecure secureClient;
+SemaphoreHandle_t stateMutex = nullptr;
+TaskHandle_t fetchTaskHandle = nullptr;
+
+constexpr uint32_t kFetchTaskStackBytes = 6144;
+constexpr UBaseType_t kFetchTaskPriority = 1;
 
 String trimForUi(const String& value) {
     String trimmed = value;
@@ -95,9 +104,40 @@ void updateUiText() {
     uiText = "NET:ERR";
 }
 
-void performFetch() {
-    lastAttemptMs = millis();
+bool lockState(TickType_t waitTicks = portMAX_DELAY) {
+    if (stateMutex == nullptr) {
+        return false;
+    }
+    return xSemaphoreTake(stateMutex, waitTicks) == pdTRUE;
+}
 
+void unlockState() {
+    xSemaphoreGive(stateMutex);
+}
+
+void applyFetchFailure() {
+    if (lockState()) {
+        lastRequestOk = false;
+        updateUiText();
+        fetchInProgress = false;
+        fetchTaskHandle = nullptr;
+        unlockState();
+    }
+}
+
+void applyFetchSuccess(const String& extractedValue) {
+    if (lockState()) {
+        lastRequestOk = true;
+        lastValue = extractedValue;
+        lastSuccessMs = millis();
+        updateUiText();
+        fetchInProgress = false;
+        fetchTaskHandle = nullptr;
+        unlockState();
+    }
+}
+
+void performFetch() {
     HTTPClient http;
     http.setConnectTimeout(NET_DEMO_HTTP_TIMEOUT_MS);
     http.setTimeout(NET_DEMO_HTTP_TIMEOUT_MS);
@@ -111,8 +151,7 @@ void performFetch() {
         beginOk = http.begin(plainClient, url);
     }
     if (!beginOk) {
-        lastRequestOk = false;
-        updateUiText();
+        applyFetchFailure();
         Serial.println("[NET] HTTP begin failed");
         return;
     }
@@ -122,8 +161,7 @@ void performFetch() {
 
     const int httpCode = http.GET();
     if (httpCode != HTTP_CODE_OK) {
-        lastRequestOk = false;
-        updateUiText();
+        applyFetchFailure();
         Serial.printf("[NET] HTTP error: %d\n", httpCode);
         http.end();
         return;
@@ -134,28 +172,47 @@ void performFetch() {
 
     String extracted = "";
     if (!extractJsonStringField(payload, NET_DEMO_JSON_KEY, extracted)) {
-        lastRequestOk = false;
-        updateUiText();
+        applyFetchFailure();
         Serial.printf("[NET] JSON parse failed for key '%s'\n", NET_DEMO_JSON_KEY);
         return;
     }
 
-    lastValue = extracted;
-    lastRequestOk = true;
-    lastSuccessMs = millis();
-    updateUiText();
-    Serial.printf("[NET] %s=%s\n", NET_DEMO_JSON_KEY, lastValue.c_str());
+    applyFetchSuccess(extracted);
+    Serial.printf("[NET] %s=%s\n", NET_DEMO_JSON_KEY, extracted.c_str());
+}
+
+void fetchTaskEntry(void* /*param*/) {
+    performFetch();
+    vTaskDelete(nullptr);
 }
 
 } // namespace
 
 void netDemoInit() {
+    if (initialized) {
+        return;
+    }
+
+    if (stateMutex == nullptr) {
+        stateMutex = xSemaphoreCreateMutex();
+    }
+    if (stateMutex == nullptr) {
+        Serial.println("[NET] init failed: cannot create mutex");
+        return;
+    }
+
+    if (lockState()) {
+        fetchInProgress = false;
+        fetchTaskHandle = nullptr;
+        lastRequestOk = false;
+        lastAttemptMs = 0;
+        lastSuccessMs = 0;
+        lastValue = "-";
+        uiText = "NET:-";
+        unlockState();
+    }
+
     initialized = true;
-    lastRequestOk = false;
-    lastAttemptMs = 0;
-    lastSuccessMs = 0;
-    lastValue = "-";
-    uiText = "NET:-";
 }
 
 void netDemoLoop(bool internetAvailable) {
@@ -167,12 +224,39 @@ void netDemoLoop(bool internetAvailable) {
         return;
     }
 
+    bool shouldStartFetch = false;
     const unsigned long nowMs = millis();
-    if (lastAttemptMs != 0 && nowMs - lastAttemptMs < NET_DEMO_REQUEST_INTERVAL_MS) {
+
+    if (!lockState()) {
         return;
     }
 
-    performFetch();
+    if (!fetchInProgress
+        && (lastAttemptMs == 0 || nowMs - lastAttemptMs >= NET_DEMO_REQUEST_INTERVAL_MS)) {
+        fetchInProgress = true;
+        lastAttemptMs = nowMs;
+        updateUiText();
+        shouldStartFetch = true;
+    }
+    unlockState();
+
+    if (!shouldStartFetch) {
+        return;
+    }
+
+    const BaseType_t created = xTaskCreatePinnedToCore(
+        fetchTaskEntry,
+        "netFetch",
+        kFetchTaskStackBytes,
+        nullptr,
+        kFetchTaskPriority,
+        &fetchTaskHandle,
+        tskNO_AFFINITY
+    );
+    if (created != pdPASS) {
+        applyFetchFailure();
+        Serial.println("[NET] fetch task create failed");
+    }
 }
 
 bool netDemoIsEnabled() {
@@ -180,23 +264,48 @@ bool netDemoIsEnabled() {
 }
 
 bool netDemoLastRequestOk() {
-    return lastRequestOk;
+    bool value = false;
+    if (lockState()) {
+        value = lastRequestOk;
+        unlockState();
+    }
+    return value;
 }
 
 String netDemoGetValue() {
-    return lastRequestOk ? lastValue : String("-");
+    String value = "-";
+    if (lockState()) {
+        value = lastRequestOk ? lastValue : String("-");
+        unlockState();
+    }
+    return value;
 }
 
 String netDemoGetUiText() {
-    return uiText;
+    String value = "NET:-";
+    if (lockState()) {
+        value = uiText;
+        unlockState();
+    }
+    return value;
 }
 
 unsigned long netDemoLastAttemptMs() {
-    return lastAttemptMs;
+    unsigned long value = 0;
+    if (lockState()) {
+        value = lastAttemptMs;
+        unlockState();
+    }
+    return value;
 }
 
 unsigned long netDemoLastSuccessMs() {
-    return lastSuccessMs;
+    unsigned long value = 0;
+    if (lockState()) {
+        value = lastSuccessMs;
+        unlockState();
+    }
+    return value;
 }
 
 #else
