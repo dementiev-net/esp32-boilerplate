@@ -10,4 +10,4 @@ Request ESP32 Boilerplate Rollout (2026-03-03)
 [x] P3 ci: добавить CI-сборку для `lilygo-t-display-s3` и `lilygo-t-qt-pro`
 [x] P3 build: разделить `debug`/`release` и снизить `CORE_DEBUG_LEVEL` для release
 [x] P3 docs: добавить troubleshooting в README (Wi-Fi portal/display/SD issues)
-[ ] P3 architecture: ввести event-driven обработку событий (buttons/wifi/ui dispatcher) и слой абстракции board-пинов
+[x] P3 architecture: ввести event-driven обработку событий (buttons/wifi/ui dispatcher) и слой абстракции board-пинов

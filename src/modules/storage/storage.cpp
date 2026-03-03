@@ -1,6 +1,7 @@
 #include "storage.h"
 #include "storage_io.h"
 #include "../../config.h"
+#include "../board/board_profile.h"
 #include <FS.h>
 #include <Preferences.h>
 #include <SD_MMC.h>
@@ -62,20 +63,29 @@ void storageInit() {
         Serial.println("[Storage] NVS init failed.");
     }
 
-#if defined(SD_USE_SDMMC_1BIT)
-    Serial.println("[Storage] Initializing SD card (SDMMC 1-bit)...");
-    if (!SD_MMC.setPins(SDMMC_CLK, SDMMC_CMD, SDMMC_D0)) {
-        Serial.println("[Storage] SD_MMC pin setup failed.");
-    } else if (SD_MMC.begin("/sdcard", true, false, SDMMC_FREQ_DEFAULT)) {
-        sdReady = true;
-        sdFs = &SD_MMC;
-        Serial.printf("[Storage] SD card ready. Size: %llu MB\n", SD_MMC.cardSize() / (1024ULL * 1024ULL));
-    } else {
-        Serial.println("[Storage] SD card mount failed.");
-        Serial.println("[Storage] Hint: format card as FAT32 (MBR), not exFAT.");
+    const BoardProfile& board = boardGetProfile();
+    if (!board.sd.supported) {
+        Serial.println("[Storage] SD is not supported on this board.");
+        return;
     }
-#elif defined(SD_CS)
-    Serial.println("[Storage] Initializing SD card...");
+
+    if (board.sd.useSdMmc1Bit) {
+        Serial.println("[Storage] Initializing SD card (SDMMC 1-bit)...");
+        if (!SD_MMC.setPins(board.sd.sdmmcClkPin, board.sd.sdmmcCmdPin, board.sd.sdmmcD0Pin)) {
+            Serial.println("[Storage] SD_MMC pin setup failed.");
+        } else if (SD_MMC.begin("/sdcard", true, false, SDMMC_FREQ_DEFAULT)) {
+            sdReady = true;
+            sdFs = &SD_MMC;
+            Serial.printf("[Storage] SD card ready. Size: %llu MB\n", SD_MMC.cardSize() / (1024ULL * 1024ULL));
+        } else {
+            Serial.println("[Storage] SD card mount failed.");
+            Serial.println("[Storage] Hint: format card as FAT32 (MBR), not exFAT.");
+        }
+        return;
+    }
+
+#if defined(SD_CS)
+    Serial.println("[Storage] Initializing SD card (SPI)...");
     SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
     if (SD.begin(SD_CS)) {
         sdReady = true;
@@ -86,7 +96,7 @@ void storageInit() {
         Serial.println("[Storage] Hint: format card as FAT32 (MBR), not exFAT.");
     }
 #else
-    Serial.println("[Storage] SD is not supported on this board.");
+    Serial.println("[Storage] SD backend is not configured for this board profile.");
 #endif
 }
 
@@ -123,11 +133,7 @@ int storageGetInt(const char* key, int defaultValue) {
 // ===== SD =====
 
 bool sdSupported() {
-#if defined(SD_USE_SDMMC_1BIT) || defined(SD_CS)
-    return true;
-#else
-    return false;
-#endif
+    return boardGetProfile().sd.supported;
 }
 
 bool sdAvailable() {

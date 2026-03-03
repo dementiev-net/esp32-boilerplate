@@ -6,7 +6,7 @@
 /**
  * @brief Инициализирует дисплей и подсветку.
  * @details Вызывать один раз из setup(). Не ISR-safe.
- * @note Применяет SCREEN_ROTATION из config.h.
+ * @note Применяет rotation и board-specific пины из `board_profile`.
  */
 void displayInit();
 

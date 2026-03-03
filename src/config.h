@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.0.0"
+#define APP_VERSION "1.1.0"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 

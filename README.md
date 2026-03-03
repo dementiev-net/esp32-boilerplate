@@ -133,6 +133,8 @@ src/
 ├── main.cpp
 ├── config.h
 └── modules/
+    ├── app/
+    ├── board/
     ├── display/
     ├── wifi/
     ├── storage/

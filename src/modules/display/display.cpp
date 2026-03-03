@@ -1,5 +1,5 @@
 #include "display.h"
-#include "../../config.h"
+#include "../board/board_profile.h"
 #include <TFT_eSPI.h>
 
 static TFT_eSPI tft = TFT_eSPI();
@@ -7,11 +7,12 @@ static TFT_eSPI tft = TFT_eSPI();
 void displayInit() {
     Serial.println("[Display] Initializing...");
 
-#ifdef BOARD_TQT_PRO
-    pinMode(4, OUTPUT);
-    digitalWrite(4, HIGH);
-    delay(100);
-#endif
+    const BoardProfile& board = boardGetProfile();
+    if (board.pins.enable5vPin >= 0) {
+        pinMode(board.pins.enable5vPin, OUTPUT);
+        digitalWrite(board.pins.enable5vPin, HIGH);
+        delay(100);
+    }
 
 #ifdef TFT_BL
     pinMode(TFT_BL, OUTPUT);
@@ -19,7 +20,7 @@ void displayInit() {
 #endif
 
     tft.init();
-    tft.setRotation(SCREEN_ROTATION);
+    tft.setRotation(board.display.rotation);
     tft.fillScreen(TFT_BLACK);
     tft.setTextDatum(TL_DATUM);
     Serial.println("[Display] Ready.");
@@ -48,8 +49,9 @@ void displayDrawLine(int x1, int y1, int x2, int y2, uint32_t color) {
 }
 
 void displayStatusBar(const char* left, const char* right) {
-    displayFillRect(0, 0, SCREEN_WIDTH, 16, 0x1082);
+    const int screenWidth = boardGetProfile().display.width;
+    displayFillRect(0, 0, screenWidth, 16, 0x1082);
     displayPrint(4, 2, left, TFT_WHITE, 1);
-    int rightX = SCREEN_WIDTH - (strlen(right) * 6) - 4;
+    int rightX = screenWidth - (strlen(right) * 6) - 4;
     displayPrint(rightX, 2, right, TFT_WHITE, 1);
 }

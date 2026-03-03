@@ -1,6 +1,6 @@
 #include "buttons.h"
 #include "buttons_logic.h"
-#include "../../config.h"
+#include "../board/board_profile.h"
 
 // ===== CALLBACKS =====
 static void (*onTopClick)() = nullptr;
@@ -17,8 +17,8 @@ struct ButtonState {
     ButtonLogicState logic;
 };
 
-static ButtonState btnTop    = { BTN_TOP,    ButtonLogicState{} };
-static ButtonState btnBottom = { BTN_BOTTOM, ButtonLogicState{} };
+static ButtonState btnTop    = { 0, ButtonLogicState{} };
+static ButtonState btnBottom = { 0, ButtonLogicState{} };
 
 static void processButton(ButtonState& btn, void (*onClick)(), void (*onLong)()) {
     bool raw = digitalRead(btn.pin) == LOW;
@@ -34,8 +34,11 @@ static void processButton(ButtonState& btn, void (*onClick)(), void (*onLong)())
 
 void buttonsInit() {
     Serial.println("[Buttons] Initializing...");
-    pinMode(BTN_TOP,    INPUT_PULLUP);
-    pinMode(BTN_BOTTOM, INPUT_PULLUP);
+    const BoardProfile& board = boardGetProfile();
+    btnTop.pin = board.pins.buttonTop;
+    btnBottom.pin = board.pins.buttonBottom;
+    pinMode(btnTop.pin, INPUT_PULLUP);
+    pinMode(btnBottom.pin, INPUT_PULLUP);
     Serial.println("[Buttons] Ready.");
 }
 
