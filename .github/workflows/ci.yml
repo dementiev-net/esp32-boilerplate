@@ -36,7 +36,24 @@ jobs:
         run: pip install platformio
 
       - name: Build firmware
-        run: pio run -e ${{ matrix.environment }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in 1 2 3; do
+            echo "Build attempt ${attempt}/3 for ${{ matrix.environment }}"
+            if pio run -e ${{ matrix.environment }}; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "Transient build failure, retrying in 20s..."
+              sleep 20
+            fi
+          done
+
+          echo "::error::Build failed after 3 attempts"
+          exit 1
 
       - name: Check flash budget (lilygo-t-qt-pro)
         if: matrix.environment == 'lilygo-t-qt-pro'
