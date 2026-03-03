@@ -96,7 +96,7 @@ jobs:
           WARN_PERCENT=75
           FAIL_PERCENT=80
 
-          SIZE_OUTPUT="$(pio run -e ${{ matrix.environment }} -t size)"
+          SIZE_OUTPUT="$(pio run -e ${{ matrix.environment }})"
           echo "$SIZE_OUTPUT"
 
           SIZE_LINE="$(echo "$SIZE_OUTPUT" | grep -Eo 'used [0-9]+ bytes from [0-9]+ bytes' | tail -n 1 || true)"
