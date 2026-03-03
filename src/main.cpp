@@ -10,10 +10,14 @@
 
 static bool statusInitialized = false;
 static bool dispatcherOverflowReported = false;
+static unsigned long topHoldUntilMs = 0;
+static unsigned long bottomHoldUntilMs = 0;
 
 struct RuntimeSnapshot {
     bool topPressed = false;
     bool bottomPressed = false;
+    bool topHoldActive = false;
+    bool bottomHoldActive = false;
     bool wifiConnected = false;
     bool sdSupported = false;
     bool sdAvailable = false;
@@ -28,10 +32,17 @@ static RuntimeSnapshot lastRenderedState;
 static RuntimeSnapshot runtimeState;
 static bool runtimeInitialized = false;
 
+static bool isFutureOrNow(unsigned long nowMs, unsigned long deadlineMs) {
+    return static_cast<long>(deadlineMs - nowMs) >= 0;
+}
+
 static RuntimeSnapshot readRuntimeSnapshot() {
+    const unsigned long nowMs = millis();
     RuntimeSnapshot state;
     state.topPressed = buttonsIsTopPressed();
     state.bottomPressed = buttonsIsBottomPressed();
+    state.topHoldActive = isFutureOrNow(nowMs, topHoldUntilMs);
+    state.bottomHoldActive = isFutureOrNow(nowMs, bottomHoldUntilMs);
     state.wifiConnected = wifiIsConnected();
     state.sdSupported = sdSupported();
     state.sdAvailable = sdAvailable();
@@ -46,6 +57,8 @@ static RuntimeSnapshot readRuntimeSnapshot() {
 static bool snapshotsEqual(const RuntimeSnapshot& a, const RuntimeSnapshot& b) {
     return a.topPressed == b.topPressed
         && a.bottomPressed == b.bottomPressed
+        && a.topHoldActive == b.topHoldActive
+        && a.bottomHoldActive == b.bottomHoldActive
         && a.wifiConnected == b.wifiConnected
         && a.sdSupported == b.sdSupported
         && a.sdAvailable == b.sdAvailable
@@ -96,7 +109,15 @@ static void displayRuntimeStatus(const RuntimeSnapshot& state, bool force = fals
     displayPrint(2, statusY, line1, state.wifiConnected ? TFT_GREEN : TFT_RED, 1);
 
     char line2[32];
-    snprintf(line2, sizeof(line2), "BTN T:%d B:%d", state.topPressed ? 1 : 0, state.bottomPressed ? 1 : 0);
+    snprintf(
+        line2,
+        sizeof(line2),
+        "BTN T:%d%s B:%d%s",
+        state.topPressed ? 1 : 0,
+        state.topHoldActive ? "H" : "",
+        state.bottomPressed ? 1 : 0,
+        state.bottomHoldActive ? "H" : ""
+    );
     displayPrint(2, statusY + 12, line2, (state.topPressed || state.bottomPressed) ? TFT_YELLOW : TFT_WHITE, 1);
 
     char line3[32];
@@ -121,6 +142,9 @@ static void publishStateChangeEvents(const RuntimeSnapshot& previous, const Runt
 
     if (previous.topPressed != current.topPressed || previous.bottomPressed != current.bottomPressed) {
         postAppEvent(AppEventType::ButtonsStateChanged);
+        needUiRefresh = true;
+    }
+    if (previous.topHoldActive != current.topHoldActive || previous.bottomHoldActive != current.bottomHoldActive) {
         needUiRefresh = true;
     }
 
@@ -164,6 +188,8 @@ static void processAppEvents() {
                 needUiRefresh = true;
                 break;
             case AppEventType::ButtonTopHold:
+                topHoldUntilMs = millis() + BUTTON_HOLD_INDICATOR_MS;
+                needUiRefresh = true;
                 break;
             case AppEventType::ButtonBottomClick:
                 Serial.println("[Button] Bottom click");
@@ -174,6 +200,8 @@ static void processAppEvents() {
                 needUiRefresh = true;
                 break;
             case AppEventType::ButtonBottomHold:
+                bottomHoldUntilMs = millis() + BUTTON_HOLD_INDICATOR_MS;
+                needUiRefresh = true;
                 break;
             case AppEventType::ButtonsStateChanged:
                 Serial.printf(

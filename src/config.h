@@ -62,6 +62,8 @@
 #define BUTTON_LONG_PRESS_MS 800
 /// @brief Интервал событий удерживания после long-press, миллисекунды.
 #define BUTTON_HOLD_REPEAT_MS 250
+/// @brief Время отображения индикатора hold на экране, миллисекунды.
+#define BUTTON_HOLD_INDICATOR_MS 350
 
 #ifdef BOARD_TDISPLAY_S3
   /// @brief GPIO верхней кнопки.
