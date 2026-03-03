@@ -34,7 +34,7 @@ Request ESP32 Boilerplate Hardware Coverage (2026-03-03)
 [x] P2 fs: добавить LittleFS как fallback для конфигов/логов на плате без SD (`lilygo-t-qt-pro`)
 [ ] P3 ui: добавить управление яркостью подсветки экрана (если pin доступен на целевой плате)
 [ ] P3 io: добавить I2C scanner и тестовый модуль внешних датчиков (как шаблон для следующих проектов)
-[ ] P3 reliability: добавить watchdog + вывод reset reason/uptime для базовой диагностики стабильности
+[x] P3 reliability: добавить watchdog + вывод reset reason/uptime для базовой диагностики стабильности
 
 Request ESP32 Boilerplate Flash Budget (2026-03-03)
 [x] P1 build: добавить compile-time флаги `FEATURE_BLE`/`FEATURE_OTA` и board-specific профили в `platformio.ini`

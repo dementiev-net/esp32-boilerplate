@@ -11,6 +11,7 @@
 #include "modules/net/net_http_demo.h"
 #include "modules/power/battery.h"
 #include "modules/power/sleep.h"
+#include "modules/system/reliability.h"
 #include "modules/storage/storage.h"
 #include "modules/time/net_time.h"
 #include "modules/usb/usb_shell.h"
@@ -45,6 +46,7 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     Serial.println("Booting...");
 
+    reliabilityInit();
     appRuntimeInit();
     runtimeStateInit(runtimeTracker);
     sleepInit();
@@ -138,7 +140,30 @@ void setup() {
 
     char wakeStr[40];
     snprintf(wakeStr, sizeof(wakeStr), "Wake: %s", sleepWakeReasonLabel());
-    displayPrint(10, 58, wakeStr, 0x7BEF, 1);
+    if (board.display.width >= 200) {
+        char resetStr[44];
+        snprintf(
+            resetStr,
+            sizeof(resetStr),
+            "Reset: %s",
+            reliabilityResetReasonLabel()
+        );
+        displayPrint(10, 46, resetStr, 0x7BEF, 1);
+        displayPrint(10, 58, wakeStr, 0x7BEF, 1);
+    } else {
+        displayPrint(4, 28, wakeStr, 0x7BEF, 1);
+    }
+
+    Serial.printf(
+        "[System] Reset: %s (%d)\n",
+        reliabilityResetReasonLabel(),
+        reliabilityResetReasonCode()
+    );
+    Serial.printf(
+        "[System] WDT: %s timeout=%us\n",
+        reliabilityWatchdogEnabled() ? "on" : "off",
+        static_cast<unsigned>(WATCHDOG_TIMEOUT_SEC)
+    );
     Serial.printf("[Power] %s\n", wakeStr);
     if (sleepCanWakeByButton()) {
         Serial.printf("[Power] Wake button: TOP GPIO%d\n", sleepWakeButtonPin());
@@ -162,6 +187,7 @@ void setup() {
 }
 
 void loop() {
+    reliabilityLoop();
     buttonsLoop();
     wifiLoop();
     #if FEATURE_USB_SHELL

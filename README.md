@@ -22,6 +22,7 @@
 | BLE advertising + GATT | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_BLE` |
 | USB CDC shell | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_USB_SHELL` |
 | HTTP JSON demo (internet) | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_NET_HTTP` |
+| Watchdog + reset diagnostics | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_WATCHDOG` |
 | LittleFS fallback | ○ (опционально) | ✓ (по умолчанию) | `FEATURE_LITTLEFS` |
 | NVS (Preferences) | ✓ | ✓ | `NVS_NAMESPACE=boilerplate` |
 | NTP время при интернете | ✓ | ✓ | Показывается в статусе `TIME` |
@@ -39,6 +40,7 @@
 - **BLE** — advertising + GATT service (battery %, uptime, version, опционально для lightweight-профиля)
 - **USB shell** — минимальный командный интерфейс по CDC для диагностики и сервисных операций
 - **Net demo** — периодический HTTP JSON запрос из интернета и вывод значения на экран/в Serial
+- **Reliability** — watchdog loop-задачи и диагностика причины reset
 
 ## Быстрый старт
 
@@ -52,8 +54,8 @@
 
 По умолчанию в `platformio.ini` заданы такие профили:
 
-- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1` (full-профиль).
-- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1` (lightweight-профиль с файловым fallback).
+- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1`, `FEATURE_WATCHDOG=1` (full-профиль).
+- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1`, `FEATURE_WATCHDOG=1` (lightweight-профиль с файловым fallback).
 
 При необходимости фичи можно включать обратно через `build_flags`:
 
@@ -63,6 +65,7 @@
 -DFEATURE_LITTLEFS=1
 -DFEATURE_USB_SHELL=1
 -DFEATURE_NET_HTTP=1
+-DFEATURE_WATCHDOG=1
 ```
 
 Примечание для `lilygo-t-qt-pro`: если включаешь `FEATURE_BLE=1`, добавь `h2zero/NimBLE-Arduino@^1.4.2`
@@ -97,6 +100,7 @@
    - в Serial выводится `Wake: ...` и `Wake button: TOP GPIO...`;
    - долгий клик `BOTTOM` переводит в deep sleep;
    - пробуждение — кнопкой `TOP`.
+   - в Serial есть строки `"[System] Reset: ..."` и `"[System] WDT: ..."` после старта.
 8. USB shell:
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
@@ -122,6 +126,7 @@
    - в Serial выводится `Wake: ...` и `Wake button: TOP GPIO...`;
    - долгий клик `BOTTOM` переводит в deep sleep;
    - пробуждение — кнопкой `TOP`.
+   - в Serial есть строки `"[System] Reset: ..."` и `"[System] WDT: ..."` после старта.
 8. USB shell:
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
@@ -242,6 +247,18 @@ ap_password=12345678
   - `BATTERY_PERCENT_EMPTY_MV`
   - `BATTERY_PERCENT_FULL_MV`
 
+## Надежность (watchdog/reset)
+
+- При старте в Serial печатается причина reset:
+  - `"[System] Reset: <label> (<code>)"`.
+- Включен task watchdog loop-задачи:
+  - `"[System] WDT: on timeout=<sec>s"`.
+- Модуль watchdog регулярно feed'ится из `loop()` и защищает от зависаний.
+- Параметры в `config.h`:
+  - `FEATURE_WATCHDOG`
+  - `WATCHDOG_TIMEOUT_SEC`
+  - `WATCHDOG_FEED_INTERVAL_MS`
+
 ## OTA (без сервера)
 
 Проект использует push OTA: после первой прошивки по USB обновления можно отправлять по Wi-Fi.
@@ -332,6 +349,10 @@ GATT service (`BLE_SERVICE_UUID`) содержит характеристики:
 - `reboot`
 - `sleep`
 
+`status` теперь дополнительно выводит:
+- reset reason (`reset=<label>(<code>)`);
+- состояние watchdog (`wdt=on/off`).
+
 ## Troubleshooting
 
 ### Wi-Fi portal не открывается
@@ -394,6 +415,7 @@ src/
     ├── time/
     ├── usb/
     ├── net/
+    ├── system/
     ├── wifi/
     ├── storage/
     └── buttons/

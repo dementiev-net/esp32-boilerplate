@@ -9,6 +9,7 @@
 #include "../net/net_http_demo.h"
 #include "../ota/ota.h"
 #include "../power/sleep.h"
+#include "../system/reliability.h"
 #include "../storage/storage.h"
 #include "../wifi/wifi.h"
 
@@ -89,11 +90,14 @@ static void printRuntimeStatus() {
         static_cast<unsigned>(FEATURE_NET_HTTP)
     );
     Serial.printf(
-        "[system] uptime=%lu s heap_free=%u bytes wake=%s wake_pin=%d\n",
-        millis() / 1000UL,
+        "[system] uptime=%lu s heap_free=%u bytes reset=%s(%d) wake=%s wake_pin=%d wdt=%s\n",
+        reliabilityUptimeSeconds(),
         static_cast<unsigned>(ESP.getFreeHeap()),
+        reliabilityResetReasonLabel(),
+        reliabilityResetReasonCode(),
         sleepWakeReasonLabel(),
-        sleepWakeButtonPin()
+        sleepWakeButtonPin(),
+        reliabilityWatchdogEnabled() ? "on" : "off"
     );
     printWifiStatus();
     printNetStatus();
@@ -235,7 +239,7 @@ static void executeCommand(const String& rawLine) {
         return;
     }
     if (cmdLower == "uptime") {
-        Serial.printf("[system] uptime=%lu s\n", millis() / 1000UL);
+        Serial.printf("[system] uptime=%lu s\n", reliabilityUptimeSeconds());
         return;
     }
     if (cmdLower == "reboot") {

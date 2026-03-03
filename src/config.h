@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.11"
+#define APP_VERSION "1.2.13"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -26,6 +26,10 @@
 /// @brief Включение demo HTTP JSON клиента: 1 = включен, 0 = исключен из runtime.
 #ifndef FEATURE_NET_HTTP
   #define FEATURE_NET_HTTP 1
+#endif
+/// @brief Включение watchdog/diagnostics модуля: 1 = включен, 0 = исключен из runtime.
+#ifndef FEATURE_WATCHDOG
+  #define FEATURE_WATCHDOG 1
 #endif
 
 // ===== SERIAL =====
@@ -83,10 +87,20 @@
 #define BATTERY_DIVIDER_NUM 2
 /// @brief Коэффициент делителя для пересчета ADC -> VBAT (знаменатель).
 #define BATTERY_DIVIDER_DEN 1
+/// @brief Калибровочный множитель VBAT после делителя (числитель, промилле = 1000).
+#define BATTERY_CALIBRATION_NUM 1035
+/// @brief Калибровочный множитель VBAT после делителя (знаменатель, промилле = 1000).
+#define BATTERY_CALIBRATION_DEN 1000
 /// @brief Напряжение пустой Li-ion батареи для расчета процента, милливольты.
 #define BATTERY_PERCENT_EMPTY_MV 3300
 /// @brief Напряжение полной Li-ion батареи для расчета процента, милливольты.
 #define BATTERY_PERCENT_FULL_MV 4200
+
+// ===== RELIABILITY (WATCHDOG / RESET DIAG) =====
+/// @brief Таймаут watchdog для loop-задачи, секунды.
+#define WATCHDOG_TIMEOUT_SEC 10
+/// @brief Период feed watchdog из `loop()`, миллисекунды.
+#define WATCHDOG_FEED_INTERVAL_MS 1000
 
 #ifdef BOARD_TDISPLAY_S3
   /// @brief Ширина экрана в пикселях (landscape).

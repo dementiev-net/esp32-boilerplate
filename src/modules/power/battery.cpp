@@ -7,9 +7,22 @@ static bool initialized = false;
 static bool supported = false;
 static int8_t adcPin = -1;
 
-static int rawToMillivolts(int raw) {
-    const long numerator = static_cast<long>(raw) * 3300L * BATTERY_DIVIDER_NUM;
-    const long denominator = 4095L * BATTERY_DIVIDER_DEN;
+static int pinMillivoltsToBatteryMillivolts(int pinMillivolts) {
+    if (pinMillivolts < 0) {
+        return -1;
+    }
+
+    const long numerator =
+        static_cast<long>(pinMillivolts)
+        * BATTERY_DIVIDER_NUM
+        * BATTERY_CALIBRATION_NUM;
+    const long denominator =
+        static_cast<long>(BATTERY_DIVIDER_DEN)
+        * BATTERY_CALIBRATION_DEN;
+    if (denominator <= 0) {
+        return -1;
+    }
+
     return static_cast<int>(numerator / denominator);
 }
 
@@ -40,19 +53,33 @@ int batteryReadMillivolts() {
         return -1;
     }
 
-    static constexpr uint8_t kSamples = 4;
-    long rawSum = 0;
+    static constexpr uint8_t kSamples = 8;
+    long pinMilliVoltsSum = 0;
+    uint8_t validSamples = 0;
 
     for (uint8_t i = 0; i < kSamples; i++) {
-        const int raw = analogRead(adcPin);
-        if (raw < 0) {
-            return -1;
+        int pinMilliVolts = analogReadMilliVolts(static_cast<uint8_t>(adcPin));
+        if (pinMilliVolts <= 0) {
+            const int raw = analogRead(adcPin);
+            if (raw < 0) {
+                continue;
+            }
+            // Fallback для окружений/SDK, где analogReadMilliVolts может вернуть 0.
+            pinMilliVolts = static_cast<int>((static_cast<long>(raw) * 3300L) / 4095L);
         }
-        rawSum += raw;
+
+        if (pinMilliVolts > 0) {
+            pinMilliVoltsSum += pinMilliVolts;
+            validSamples++;
+        }
     }
 
-    const int rawAvg = static_cast<int>(rawSum / kSamples);
-    const int millivolts = rawToMillivolts(rawAvg);
+    if (validSamples == 0) {
+        return -1;
+    }
+
+    const int pinMilliVoltsAvg = static_cast<int>(pinMilliVoltsSum / validSamples);
+    const int millivolts = pinMillivoltsToBatteryMillivolts(pinMilliVoltsAvg);
     if (millivolts < BATTERY_MIN_VALID_MV || millivolts > BATTERY_MAX_VALID_MV) {
         return -1;
     }
