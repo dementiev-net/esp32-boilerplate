@@ -1,56 +1,142 @@
 #include "storage.h"
+#include "storage_io.h"
 #include "../../config.h"
+#include <FS.h>
 #include <Preferences.h>
+#include <SD_MMC.h>
 #include <SD.h>
 #include <SPI.h>
+#include <cstring>
 
 static Preferences prefs;
+static bool nvsReady = false;
 static bool sdReady = false;
+static fs::FS* sdFs = nullptr;
+
+struct SdIoContext {
+    fs::FS* fs;
+    File file;
+};
+
+static bool sdIoExists(void* ctx, const char* path) {
+    SdIoContext* io = static_cast<SdIoContext*>(ctx);
+    return io->fs->exists(path);
+}
+
+static bool sdIoRemove(void* ctx, const char* path) {
+    SdIoContext* io = static_cast<SdIoContext*>(ctx);
+    return io->fs->remove(path);
+}
+
+static bool sdIoOpenWrite(void* ctx, const char* path, bool append) {
+    SdIoContext* io = static_cast<SdIoContext*>(ctx);
+    io->file = io->fs->open(path, append ? FILE_APPEND : FILE_WRITE);
+    return static_cast<bool>(io->file);
+}
+
+static bool sdIoWriteText(void* ctx, const char* content) {
+    SdIoContext* io = static_cast<SdIoContext*>(ctx);
+    size_t written = io->file.print(content);
+    return written > 0 || std::strlen(content) == 0;
+}
+
+static void sdIoClose(void* ctx) {
+    SdIoContext* io = static_cast<SdIoContext*>(ctx);
+    if (io->file) {
+        io->file.close();
+    }
+}
+
+#ifndef FILE_APPEND
+#define FILE_APPEND FILE_WRITE
+#endif
 
 // ===== NVS =====
 
 void storageInit() {
     Serial.println("[Storage] Initializing NVS...");
-    prefs.begin(NVS_NAMESPACE, false);
-    Serial.println("[Storage] NVS ready.");
+    nvsReady = prefs.begin(NVS_NAMESPACE, false);
+    if (nvsReady) {
+        Serial.println("[Storage] NVS ready.");
+    } else {
+        Serial.println("[Storage] NVS init failed.");
+    }
 
-#ifdef SD_CS
+#if defined(SD_USE_SDMMC_1BIT)
+    Serial.println("[Storage] Initializing SD card (SDMMC 1-bit)...");
+    if (!SD_MMC.setPins(SDMMC_CLK, SDMMC_CMD, SDMMC_D0)) {
+        Serial.println("[Storage] SD_MMC pin setup failed.");
+    } else if (SD_MMC.begin("/sdcard", true, false, SDMMC_FREQ_DEFAULT)) {
+        sdReady = true;
+        sdFs = &SD_MMC;
+        Serial.printf("[Storage] SD card ready. Size: %llu MB\n", SD_MMC.cardSize() / (1024ULL * 1024ULL));
+    } else {
+        Serial.println("[Storage] SD card mount failed.");
+        Serial.println("[Storage] Hint: format card as FAT32 (MBR), not exFAT.");
+    }
+#elif defined(SD_CS)
     Serial.println("[Storage] Initializing SD card...");
     SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
     if (SD.begin(SD_CS)) {
         sdReady = true;
+        sdFs = &SD;
         Serial.println("[Storage] SD card ready.");
     } else {
         Serial.println("[Storage] SD card not found, skipping.");
+        Serial.println("[Storage] Hint: format card as FAT32 (MBR), not exFAT.");
     }
+#else
+    Serial.println("[Storage] SD is not supported on this board.");
 #endif
 }
 
+bool storageNvsAvailable() {
+    return nvsReady;
+}
+
 void storageSetString(const char* key, const char* value) {
+    if (!nvsReady) {
+        Serial.println("[Storage] NVS not ready, skip putString.");
+        return;
+    }
     prefs.putString(key, value);
 }
 
 String storageGetString(const char* key, const char* defaultValue) {
+    if (!nvsReady) return String(defaultValue);
     return prefs.getString(key, defaultValue);
 }
 
 void storageSetInt(const char* key, int value) {
+    if (!nvsReady) {
+        Serial.println("[Storage] NVS not ready, skip putInt.");
+        return;
+    }
     prefs.putInt(key, value);
 }
 
 int storageGetInt(const char* key, int defaultValue) {
+    if (!nvsReady) return defaultValue;
     return prefs.getInt(key, defaultValue);
 }
 
 // ===== SD =====
+
+bool sdSupported() {
+#if defined(SD_USE_SDMMC_1BIT) || defined(SD_CS)
+    return true;
+#else
+    return false;
+#endif
+}
 
 bool sdAvailable() {
     return sdReady;
 }
 
 String sdReadFile(const char* path) {
-    if (!sdReady) return "";
-    File file = SD.open(path);
+    if (!sdReady || sdFs == nullptr) return "";
+    File file = sdFs->open(path);
     if (!file) {
         Serial.printf("[Storage] Failed to open file: %s\n", path);
         return "";
@@ -64,13 +150,25 @@ String sdReadFile(const char* path) {
 }
 
 bool sdWriteFile(const char* path, const char* content) {
-    if (!sdReady) return false;
-    File file = SD.open(path, FILE_WRITE);
-    if (!file) {
-        Serial.printf("[Storage] Failed to write file: %s\n", path);
-        return false;
+    if (!sdReady || sdFs == nullptr) return false;
+    SdIoContext ctx = { sdFs, File() };
+    StorageIo io = { sdIoExists, sdIoRemove, sdIoOpenWrite, sdIoWriteText, sdIoClose, &ctx };
+    StorageIoResult result = storageWriteText(&io, path, content, StorageWriteMode::Overwrite);
+    if (result == StorageIoResult::Ok) {
+        return true;
     }
-    file.print(content);
-    file.close();
-    return true;
+    Serial.printf("[Storage] Write failed (%d): %s\n", static_cast<int>(result), path);
+    return false;
+}
+
+bool sdAppendFile(const char* path, const char* content) {
+    if (!sdReady || sdFs == nullptr) return false;
+    SdIoContext ctx = { sdFs, File() };
+    StorageIo io = { sdIoExists, sdIoRemove, sdIoOpenWrite, sdIoWriteText, sdIoClose, &ctx };
+    StorageIoResult result = storageWriteText(&io, path, content, StorageWriteMode::Append);
+    if (result == StorageIoResult::Ok) {
+        return true;
+    }
+    Serial.printf("[Storage] Append failed (%d): %s\n", static_cast<int>(result), path);
+    return false;
 }

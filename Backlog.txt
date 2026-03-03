@@ -1,0 +1,13 @@
+Request ESP32 Boilerplate Rollout (2026-03-03)
+[x] P1 config: убрать `-DBOARD_HAS_PSRAM` из окружения `lilygo-t-qt-pro` (плата без PSRAM)
+[x] P1 storage: исправить семантику `sdWriteFile` (truncate overwrite) или разделить API на `sdAppendFile`/`sdOverwriteFile`
+[x] P1 storage: добавить проверку результата `prefs.begin(...)` и явную диагностику ошибок NVS
+[x] P2 ui: обновлять на экране параметры рантайма (кнопки, Wi-Fi, SD, IP) динамически в `loop()`
+[x] P2 deps: зафиксировать версию WiFiManager (убрать плавающую зависимость с GitHub HEAD)
+[x] P2 wifi: добавить режимы Wi-Fi через SD-конфиг (`mode=ap|sta|auto` в `/wifi.conf`)
+[x] P3 tests: вынести парсинг `/wifi.conf` в отдельный модуль и покрыть unit-тестами (native)
+[x] P3 tests: добавить unit-тесты для `buttons` (click/long press) и `storage` (read/write edge cases)
+[ ] P3 ci: добавить CI-сборку для `lilygo-t-display-s3` и `lilygo-t-qt-pro`
+[ ] P3 build: разделить `debug`/`release` и снизить `CORE_DEBUG_LEVEL` для release
+[ ] P3 docs: добавить troubleshooting в README (Wi-Fi portal/display/SD issues)
+[ ] P3 architecture: ввести event-driven обработку событий (buttons/wifi/ui dispatcher) и слой абстракции board-пинов

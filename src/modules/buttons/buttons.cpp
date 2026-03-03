@@ -1,4 +1,5 @@
 #include "buttons.h"
+#include "buttons_logic.h"
 #include "../../config.h"
 
 // ===== CALLBACKS =====
@@ -13,43 +14,20 @@ static void (*onBottomLongPress)() = nullptr;
 
 struct ButtonState {
     uint8_t pin;
-    bool lastRaw;
-    bool pressed;
-    unsigned long pressedAt;
-    bool longFired;
+    ButtonLogicState logic;
 };
 
-static ButtonState btnTop    = { BTN_TOP,    false, false, 0, false };
-static ButtonState btnBottom = { BTN_BOTTOM, false, false, 0, false };
+static ButtonState btnTop    = { BTN_TOP,    ButtonLogicState{} };
+static ButtonState btnBottom = { BTN_BOTTOM, ButtonLogicState{} };
 
 static void processButton(ButtonState& btn, void (*onClick)(), void (*onLong)()) {
     bool raw = digitalRead(btn.pin) == LOW;
-
-    if (raw && !btn.lastRaw) {
-        // Нажатие
-        btn.pressed   = true;
-        btn.pressedAt = millis();
-        btn.longFired = false;
+    ButtonLogicEvent event = buttonsLogicProcess(btn.logic, raw, millis(), DEBOUNCE_MS, LONG_PRESS_MS);
+    if (event == ButtonLogicEvent::LongPress) {
+        if (onLong) onLong();
+    } else if (event == ButtonLogicEvent::Click) {
+        if (onClick) onClick();
     }
-
-    if (btn.pressed && !btn.longFired) {
-        if (millis() - btn.pressedAt >= LONG_PRESS_MS) {
-            btn.longFired = true;
-            if (onLong) onLong();
-        }
-    }
-
-    if (!raw && btn.lastRaw) {
-        // Отпускание
-        if (btn.pressed && !btn.longFired) {
-            if (millis() - btn.pressedAt >= DEBOUNCE_MS) {
-                if (onClick) onClick();
-            }
-        }
-        btn.pressed = false;
-    }
-
-    btn.lastRaw = raw;
 }
 
 // ===== PUBLIC =====
@@ -70,3 +48,11 @@ void buttonsOnTopClick(void (*callback)())      { onTopClick      = callback; }
 void buttonsOnTopLongPress(void (*callback)())  { onTopLongPress  = callback; }
 void buttonsOnBottomClick(void (*callback)())   { onBottomClick   = callback; }
 void buttonsOnBottomLongPress(void (*callback)()) { onBottomLongPress = callback; }
+
+bool buttonsIsTopPressed() {
+    return buttonsLogicIsPressed(btnTop.logic);
+}
+
+bool buttonsIsBottomPressed() {
+    return buttonsLogicIsPressed(btnBottom.logic);
+}
