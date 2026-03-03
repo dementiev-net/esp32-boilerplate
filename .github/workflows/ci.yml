@@ -59,20 +59,11 @@ jobs:
           USED_BYTES="$(echo "$SIZE_LINE" | awk '{print $2}')"
           TOTAL_BYTES="$(echo "$SIZE_LINE" | awk '{print $5}')"
 
-          PERCENT="$(python - <<PY
-used = int("$USED_BYTES")
-total = int("$TOTAL_BYTES")
-print((used * 100.0) / total)
-PY
-)"
+          PERCENT="$(python -c "used=int('$USED_BYTES'); total=int('$TOTAL_BYTES'); print((used * 100.0) / total)")"
 
           echo "Flash usage: ${USED_BYTES}/${TOTAL_BYTES} bytes (${PERCENT}%)"
 
-          if python - <<PY
-percent = float("$PERCENT")
-threshold = float("$FAIL_PERCENT")
-raise SystemExit(1 if percent > threshold else 0)
-PY
+          if python -c "import sys; percent=float('$PERCENT'); threshold=float('$FAIL_PERCENT'); sys.exit(1 if percent > threshold else 0)"
           then
             :
           else
@@ -80,11 +71,7 @@ PY
             exit 1
           fi
 
-          if python - <<PY
-percent = float("$PERCENT")
-threshold = float("$WARN_PERCENT")
-raise SystemExit(1 if percent > threshold else 0)
-PY
+          if python -c "import sys; percent=float('$PERCENT'); threshold=float('$WARN_PERCENT'); sys.exit(1 if percent > threshold else 0)"
           then
             :
           else
