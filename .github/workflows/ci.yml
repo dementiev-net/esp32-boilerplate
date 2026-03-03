@@ -17,7 +17,39 @@ jobs:
 
     steps:
       - name: Checkout
+        id: checkout
         uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          fetch-depth: 1
+
+      - name: Checkout fallback (retry)
+        if: steps.checkout.outcome == 'failure'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          git init .
+          git remote remove origin 2>/dev/null || true
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+          for attempt in 1 2 3; do
+            echo "Checkout fallback attempt ${attempt}/3"
+            if git fetch --depth=1 origin "${{ github.sha }}" && git checkout --force FETCH_HEAD; then
+              git remote set-url origin "https://github.com/${{ github.repository }}.git"
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "Transient checkout failure, retrying in 20s..."
+              sleep 20
+            fi
+          done
+
+          echo "::error::Checkout failed after 3 fallback attempts"
+          exit 1
 
       - name: Set up Python
         uses: actions/setup-python@v5
