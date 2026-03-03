@@ -29,6 +29,7 @@
 - **Buttons** — обработка клика, долгого нажатия и удерживания (hold repeat)
 - **Time** — синхронизация точного времени через NTP при наличии интернета
 - **Storage** — NVS (сохранение между перезагрузками) + SD карта
+- **Power** — измерение батареи (VBAT %) и deep sleep с пробуждением по кнопке
 
 ## Быстрый старт
 
@@ -63,6 +64,10 @@
 6. SD (если карта вставлена):
    - статус `SD:OK`;
    - для нераспознанной карты — проверить `FAT32 (MBR)`.
+7. Power:
+   - в Serial выводится `Wake: ...` и `Wake button: TOP GPIO...`;
+   - долгий клик `BOTTOM` переводит в deep sleep;
+   - пробуждение — кнопкой `TOP`.
 
 ### T-QT Pro
 
@@ -78,6 +83,10 @@
    - при наличии интернета строка `TIME` меняется с `--:--:--` на текущее время.
 6. SD:
    - ожидаемое состояние `SD:N/A` (в проекте не используется на T-QT Pro).
+7. Power:
+   - в Serial выводится `Wake: ...` и `Wake button: TOP GPIO...`;
+   - долгий клик `BOTTOM` переводит в deep sleep;
+   - пробуждение — кнопкой `TOP`.
 
 ## Режимы Wi-Fi через SD-конфиг (T-Display-S3)
 
@@ -133,6 +142,7 @@ ap_password=12345678
 - `Click` - короткое нажатие.
 - `LongPress` - событие один раз после порога `BUTTON_LONG_PRESS_MS`.
 - `Hold` - периодическое событие после `LongPress` с интервалом `BUTTON_HOLD_REPEAT_MS`.
+- `Bottom LongPress` в runtime переводит устройство в deep sleep.
 
 Порог и интервалы настраиваются в `config.h`:
 - `BUTTON_DEBOUNCE_MS`
@@ -146,6 +156,15 @@ ap_password=12345678
   - `NTP_TIMEZONE`
   - `NTP_SERVER_1`, `NTP_SERVER_2`, `NTP_SERVER_3`
   - `NTP_RETRY_MS`
+
+## Энергосбережение
+
+- Причина пробуждения выводится в Serial (`Wake: ...`) и на экран при старте.
+- Deep sleep активируется по `Bottom LongPress`.
+- Пробуждение настроено на `TOP` кнопку (RTC wake pin).
+- Калибровка процентов батареи задается в `config.h`:
+  - `BATTERY_PERCENT_EMPTY_MV`
+  - `BATTERY_PERCENT_FULL_MV`
 
 ## Troubleshooting
 
@@ -202,6 +221,7 @@ src/
 └── modules/
     ├── app/
     ├── board/
+    ├── power/
     ├── display/
     ├── time/
     ├── wifi/

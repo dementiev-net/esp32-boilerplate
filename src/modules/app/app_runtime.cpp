@@ -1,7 +1,7 @@
 #include "app_runtime.h"
 
 #include "../../config.h"
-#include "../power/battery.h"
+#include "../power/sleep.h"
 
 void appRuntimeInit() {
     appDispatcherInit();
@@ -85,7 +85,12 @@ AppRuntimeDrainResult appRuntimeDrainEvents(
                 break;
             case AppEventType::ButtonBottomLongPress:
                 Serial.println("[Button] Bottom long press");
-                result.needUiRefresh = true;
+                if (sleepCanWakeByButton()) {
+                    sleepEnterDeepSleep();
+                } else {
+                    Serial.println("[Power] Sleep skipped: wake button is not configured");
+                    result.needUiRefresh = true;
+                }
                 break;
             case AppEventType::ButtonBottomHold:
                 runtimeStateActivateBottomHold(tracker, nowMs, BUTTON_HOLD_INDICATOR_MS);
@@ -123,8 +128,7 @@ AppRuntimeDrainResult appRuntimeDrainEvents(
                 break;
             case AppEventType::BatteryUpdated:
                 if (runtimeState.batterySupported && runtimeState.batteryMillivolts >= 0) {
-                    const int percent = batteryMillivoltsToPercent(runtimeState.batteryMillivolts);
-                    Serial.printf("[Runtime] VBAT=%d%% (%dmV)\n", percent, runtimeState.batteryMillivolts);
+                    Serial.printf("[Runtime] VBAT=%d%% (%dmV)\n", runtimeState.batteryPercent, runtimeState.batteryMillivolts);
                 } else {
                     Serial.println("[Runtime] VBAT unavailable");
                 }

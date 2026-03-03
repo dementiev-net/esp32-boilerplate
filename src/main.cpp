@@ -9,6 +9,7 @@
 #include "modules/buttons/buttons.h"
 #include "modules/display/display.h"
 #include "modules/power/battery.h"
+#include "modules/power/sleep.h"
 #include "modules/storage/storage.h"
 #include "modules/time/net_time.h"
 #include "modules/wifi/wifi.h"
@@ -38,6 +39,7 @@ void setup() {
 
     appRuntimeInit();
     runtimeStateInit(runtimeTracker);
+    sleepInit();
 
     displayInit();
     bootPreloaderBegin();
@@ -45,7 +47,7 @@ void setup() {
     bootPreloaderStep(20, "Storage init");
     storageInit();
 
-    bootPreloaderStep(30, "Power init");
+    bootPreloaderStep(28, "Power init");
     batteryInit();
 
     bootPreloaderStep(40, "Buttons init");
@@ -97,6 +99,16 @@ void setup() {
     snprintf(bootStr, sizeof(bootStr), "Boot count: %d", bootCount);
     displayPrint(10, 70, bootStr, TFT_CYAN, 1);
     Serial.printf("[NVS] %s\n", bootStr);
+
+    char wakeStr[40];
+    snprintf(wakeStr, sizeof(wakeStr), "Wake: %s", sleepWakeReasonLabel());
+    displayPrint(10, 58, wakeStr, 0x7BEF, 1);
+    Serial.printf("[Power] %s\n", wakeStr);
+    if (sleepCanWakeByButton()) {
+        Serial.printf("[Power] Wake button: TOP GPIO%d\n", sleepWakeButtonPin());
+    } else {
+        Serial.println("[Power] Wake button is not available for this board");
+    }
 
     statusPanelReset();
 
