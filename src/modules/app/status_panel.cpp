@@ -123,7 +123,8 @@ void statusPanelRender(const RuntimeSnapshot& state, bool force) {
     }
 
     char line4Buffer[40];
-    const bool batteryValid = state.batterySupported && state.batteryPercent >= 0;
+    const bool batteryShownAsUsb = state.batterySupported && state.usbHostConnected;
+    const bool batteryValid = state.batterySupported && !batteryShownAsUsb && state.batteryPercent >= 0;
     const bool backlightValid = state.backlightSupported && state.backlightPercent >= 0;
     char timeCompact[6];
     memset(timeCompact, 0, sizeof(timeCompact));
@@ -136,12 +137,16 @@ void statusPanelRender(const RuntimeSnapshot& state, bool force) {
     }
     char batteryText[8];
     char backlightText[8];
-    snprintf(
-        batteryText,
-        sizeof(batteryText),
-        batteryValid ? "%d%%" : "--%%",
-        batteryValid ? state.batteryPercent : 0
-    );
+    if (batteryShownAsUsb) {
+        snprintf(batteryText, sizeof(batteryText), "USB");
+    } else {
+        snprintf(
+            batteryText,
+            sizeof(batteryText),
+            batteryValid ? "%d%%" : "--%%",
+            batteryValid ? state.batteryPercent : 0
+        );
+    }
     snprintf(
         backlightText,
         sizeof(backlightText),

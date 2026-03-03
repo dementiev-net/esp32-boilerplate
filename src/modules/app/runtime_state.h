@@ -23,6 +23,8 @@ struct RuntimeSnapshot {
     String netValue = "-";
     String netUiText = "NET:-";
     bool batterySupported = false;
+    /// @brief Активен USB CDC-хост (эвристика для UI-режима батареи `USB`).
+    bool usbHostConnected = false;
     int batteryMillivolts = -1;
     int batteryPercent = -1;
     bool backlightSupported = false;
@@ -91,6 +93,7 @@ void runtimeStateActivateBottomHold(RuntimeStateTracker& tracker, unsigned long 
  * - Для TIME обновляет кэш не чаще 1 раза в секунду (1 Hz).
  * - Ограничения по платам: поле `sdSupported` зависит от board profile (`false` на T-QT Pro).
  * - Для VBAT обновляет кэш не чаще `BATTERY_SAMPLE_INTERVAL_MS`.
+ * - При `usbHostConnected=true` UI может скрывать проценты батареи и показывать режим `USB`.
  * - Не ISR-safe.
  */
 RuntimeSnapshot runtimeStateRead(RuntimeStateTracker& tracker, unsigned long nowMs);

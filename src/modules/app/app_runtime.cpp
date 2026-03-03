@@ -55,6 +55,7 @@ void appRuntimePublishStateChanges(
     }
 
     if (previous.batterySupported != current.batterySupported
+        || previous.usbHostConnected != current.usbHostConnected
         || previous.batteryMillivolts != current.batteryMillivolts) {
         appRuntimePostEvent(AppEventType::BatteryUpdated);
         needUiRefresh = true;
@@ -151,7 +152,13 @@ AppRuntimeDrainResult appRuntimeDrainEvents(
                 break;
             case AppEventType::BatteryUpdated:
                 if (runtimeState.batterySupported && runtimeState.batteryMillivolts >= 0) {
-                    Serial.printf("[Runtime] VBAT=%d%% (%dmV)\n", runtimeState.batteryPercent, runtimeState.batteryMillivolts);
+                    Serial.printf(
+                        runtimeState.usbHostConnected
+                            ? "[Runtime] VBAT=%d%% (%dmV) [usb]\n"
+                            : "[Runtime] VBAT=%d%% (%dmV)\n",
+                        runtimeState.batteryPercent,
+                        runtimeState.batteryMillivolts
+                    );
                 } else {
                     Serial.println("[Runtime] VBAT unavailable");
                 }

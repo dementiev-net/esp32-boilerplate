@@ -50,6 +50,7 @@ RuntimeSnapshot runtimeStateRead(RuntimeStateTracker& tracker, unsigned long now
     state.netValue = netDemoGetValue();
     state.netUiText = netDemoGetUiText();
     state.batterySupported = batteryIsSupported();
+    state.usbHostConnected = batteryUsbHostConnected();
     state.backlightSupported = displayBrightnessSupported();
     state.backlightPercent = state.backlightSupported
         ? static_cast<int>(displayGetBrightnessPercent())
@@ -96,6 +97,7 @@ bool runtimeStateEquals(const RuntimeSnapshot& a, const RuntimeSnapshot& b) {
         && a.netValue == b.netValue
         && a.netUiText == b.netUiText
         && a.batterySupported == b.batterySupported
+        && a.usbHostConnected == b.usbHostConnected
         && a.batteryMillivolts == b.batteryMillivolts
         && a.batteryPercent == b.batteryPercent
         && a.backlightSupported == b.backlightSupported

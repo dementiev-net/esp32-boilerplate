@@ -2,6 +2,9 @@
 
 #include "../../config.h"
 #include "../board/board_profile.h"
+#if defined(ARDUINO_USB_MODE) && (ARDUINO_USB_MODE == 1)
+  #include "soc/usb_serial_jtag_struct.h"
+#endif
 
 static bool initialized = false;
 static bool supported = false;
@@ -46,6 +49,37 @@ void batteryInit() {
 
 bool batteryIsSupported() {
     return supported;
+}
+
+bool batteryUsbHostConnected() {
+#if defined(ARDUINO_USB_MODE) && (ARDUINO_USB_MODE == 1) && defined(ARDUINO_USB_CDC_ON_BOOT) && (ARDUINO_USB_CDC_ON_BOOT == 1)
+    // Для USB Serial JTAG надёжнее отслеживать приходы SOF-фреймов от USB-хоста.
+    // Если frame index меняется, считаем, что подключён USB-хост (ПК).
+    static bool initialized = false;
+    static uint16_t lastFrameIndex = 0;
+    static unsigned long lastSofSeenMs = 0;
+    static constexpr unsigned long kUsbHostGraceMs = 120;
+
+    const unsigned long now = millis();
+    const uint16_t frameIndex = static_cast<uint16_t>(USB_SERIAL_JTAG.fram_num.sof_frame_index);
+    if (!initialized) {
+        initialized = true;
+        lastFrameIndex = frameIndex;
+        lastSofSeenMs = 0;
+        return false;
+    }
+
+    if (frameIndex != lastFrameIndex) {
+        lastFrameIndex = frameIndex;
+        lastSofSeenMs = now;
+    }
+
+    return lastSofSeenMs > 0 && (now - lastSofSeenMs) <= kUsbHostGraceMs;
+#elif defined(ARDUINO_USB_CDC_ON_BOOT) && (ARDUINO_USB_CDC_ON_BOOT == 1)
+    return static_cast<bool>(Serial);
+#else
+    return false;
+#endif
 }
 
 int batteryReadMillivolts() {

@@ -28,6 +28,7 @@
 | NTP время при интернете | ✓ | ✓ | Показывается в статусе `TIME` |
 | Boot preloader | ✓ | ✓ | Логотип + прогресс загрузки |
 | Яркость подсветки (PWM) | ✓ | ✓ | Команда shell `brightness 0..100` |
+| Startup self-test | ✓ | ✓ | `PASS/FAIL` в Serial и на экране |
 
 ## Что включено
 
@@ -43,6 +44,7 @@
 - **USB shell** — минимальный командный интерфейс по CDC для диагностики и сервисных операций
 - **Net demo** — периодический HTTP JSON запрос из интернета и вывод значения на экран/в Serial
 - **Reliability** — watchdog loop-задачи и диагностика причины reset
+- **Self-test** — стартовая проверка display/buttons/wifi/storage/battery с итогом PASS/FAIL
 
 ## Быстрый старт
 
@@ -114,6 +116,9 @@
    - команда `brightness` показывает текущую яркость;
    - команда `brightness 30` применяет новый уровень подсветки;
    - в статус-панели в строке `TIME/VB` выводится `BL:xx%`.
+11. Self-test:
+   - в Serial после старта есть строки `"[SelfTest] ..."` и итог `"[SelfTest] RESULT: PASS/FAIL"`;
+   - на экране отображается блок `SELFTEST:PASS/FAIL`.
 
 ### T-QT Pro
 
@@ -145,6 +150,9 @@
    - команда `brightness` показывает текущую яркость;
    - команда `brightness 30` применяет новый уровень подсветки;
    - в статус-панели в строке `TIME/VB` выводится `BL:xx%`.
+11. Self-test:
+   - в Serial после старта есть строки `"[SelfTest] ..."` и итог `"[SelfTest] RESULT: PASS/FAIL"`;
+   - на экране отображается блок `SELFTEST:PASS/FAIL`.
 
 ## Режимы Wi-Fi через файловый конфиг (`/wifi.conf`)
 
@@ -283,6 +291,20 @@ ap_password=12345678
   - `FEATURE_WATCHDOG`
   - `WATCHDOG_TIMEOUT_SEC`
   - `WATCHDOG_FEED_INTERVAL_MS`
+
+## Startup self-test
+
+- После инициализации модулей в `setup()` выполняется стартовый self-test:
+  - display
+  - buttons
+  - wifi
+  - storage (NVS + file backend)
+  - battery (или `N/A`, если не поддерживается платой)
+- Результат выводится:
+  - в Serial: подробный отчет + `"[SelfTest] RESULT: PASS/FAIL"`
+  - на экран: краткий блок `SELFTEST:PASS/FAIL`
+- Управление через `config.h`:
+  - `FEATURE_SELF_TEST`
 
 ## OTA (без сервера)
 

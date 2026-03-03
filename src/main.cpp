@@ -12,6 +12,7 @@
 #include "modules/power/battery.h"
 #include "modules/power/sleep.h"
 #include "modules/system/reliability.h"
+#include "modules/system/self_test.h"
 #include "modules/storage/storage.h"
 #include "modules/time/net_time.h"
 #include "modules/usb/usb_shell.h"
@@ -126,16 +127,16 @@ void setup() {
 
     displayClear(TFT_BLACK);
     const BoardProfile& board = boardGetProfile();
-    if (board.display.width >= 200) {
-        displayPrint(10, 10, APP_NAME " v" APP_VERSION, TFT_WHITE, 2);
-    } else {
-        displayPrint(4, 4, APP_NAME, TFT_WHITE, 1);
-        displayPrint(4, 16, "v" APP_VERSION, TFT_CYAN, 1);
+    const int statusTopY = board.display.height - 60;
+    const int selfTestHeight = 36;
+    int selfTestY = statusTopY - selfTestHeight - 2;
+    if (selfTestY < 4) {
+        selfTestY = 4;
     }
 
     char bootStr[32];
     snprintf(bootStr, sizeof(bootStr), "Boot count: %d", bootCount);
-    displayPrint(10, 70, bootStr, TFT_CYAN, 1);
+    displayPrint(4, 4, bootStr, TFT_CYAN, 1);
     Serial.printf("[NVS] %s\n", bootStr);
 
     char wakeStr[40];
@@ -148,10 +149,10 @@ void setup() {
             "Reset: %s",
             reliabilityResetReasonLabel()
         );
-        displayPrint(10, 46, resetStr, 0x7BEF, 1);
-        displayPrint(10, 58, wakeStr, 0x7BEF, 1);
-    } else {
+        displayPrint(4, 16, resetStr, 0x7BEF, 1);
         displayPrint(4, 28, wakeStr, 0x7BEF, 1);
+    } else {
+        displayPrint(4, 16, wakeStr, 0x7BEF, 1);
     }
 
     Serial.printf(
@@ -170,6 +171,14 @@ void setup() {
     } else {
         Serial.println("[Power] Wake button is not available for this board");
     }
+
+    #if FEATURE_SELF_TEST
+    SelfTestResult selfTest = selfTestRun();
+    selfTestPrintReport(selfTest);
+    selfTestRenderReport(selfTest, selfTestY);
+    #else
+    Serial.println("[SelfTest] disabled by build profile");
+    #endif
 
     statusPanelReset();
 

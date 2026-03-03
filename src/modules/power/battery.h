@@ -21,6 +21,17 @@ void batteryInit();
 bool batteryIsSupported();
 
 /**
+ * @brief Возвращает признак активного USB CDC-хоста.
+ * @return true если USB CDC активен (подключение к ПК/Serial Monitor).
+ * @details
+ * - Используется как эвристика для UI: при USB можно скрывать проценты батареи.
+ * - На ESP32-S3 USB Serial JTAG определяется по SOF-фреймам USB-хоста.
+ * - Неблокирующая, без побочных эффектов.
+ * - Ограничения по платам: зависит от реализации USB CDC в Arduino core.
+ */
+bool batteryUsbHostConnected();
+
+/**
  * @brief Считывает текущее напряжение батареи в милливольтах.
  * @return Напряжение в mV или `-1`, если значение невалидно/батарея не обнаружена.
  * @details

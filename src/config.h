@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.15"
+#define APP_VERSION "1.2.19"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -30,6 +30,10 @@
 /// @brief Включение watchdog/diagnostics модуля: 1 = включен, 0 = исключен из runtime.
 #ifndef FEATURE_WATCHDOG
   #define FEATURE_WATCHDOG 1
+#endif
+/// @brief Включение стартового self-test отчета: 1 = включен, 0 = выключен.
+#ifndef FEATURE_SELF_TEST
+  #define FEATURE_SELF_TEST 1
 #endif
 
 // ===== SERIAL =====

@@ -92,12 +92,13 @@ static void printRuntimeStatus() {
     Serial.printf("[app] %s v%s\n", APP_NAME, APP_VERSION);
     Serial.printf("[board] %s\n", board.label);
     Serial.printf(
-        "[features] ota=%u ble=%u littlefs=%u usb_shell=%u net_http=%u\n",
+        "[features] ota=%u ble=%u littlefs=%u usb_shell=%u net_http=%u self_test=%u\n",
         static_cast<unsigned>(FEATURE_OTA),
         static_cast<unsigned>(FEATURE_BLE),
         static_cast<unsigned>(FEATURE_LITTLEFS),
         static_cast<unsigned>(FEATURE_USB_SHELL),
-        static_cast<unsigned>(FEATURE_NET_HTTP)
+        static_cast<unsigned>(FEATURE_NET_HTTP),
+        static_cast<unsigned>(FEATURE_SELF_TEST)
     );
     Serial.printf(
         "[system] uptime=%lu s heap_free=%u bytes reset=%s(%d) wake=%s wake_pin=%d wdt=%s\n",
