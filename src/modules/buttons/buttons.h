@@ -23,6 +23,11 @@ void buttonsOnTopClick(void (*callback)());
  */
 void buttonsOnTopLongPress(void (*callback)());
 /**
+ * @brief Назначает обработчик удерживания верхней кнопки.
+ * @details Вызывается периодически после LongPress с интервалом BUTTON_HOLD_REPEAT_MS.
+ */
+void buttonsOnTopHold(void (*callback)());
+/**
  * @brief Назначает обработчик клика нижней кнопки.
  */
 void buttonsOnBottomClick(void (*callback)());
@@ -30,6 +35,11 @@ void buttonsOnBottomClick(void (*callback)());
  * @brief Назначает обработчик долгого нажатия нижней кнопки.
  */
 void buttonsOnBottomLongPress(void (*callback)());
+/**
+ * @brief Назначает обработчик удерживания нижней кнопки.
+ * @details Вызывается периодически после LongPress с интервалом BUTTON_HOLD_REPEAT_MS.
+ */
+void buttonsOnBottomHold(void (*callback)());
 
 /**
  * @brief Возвращает текущее состояние верхней кнопки.

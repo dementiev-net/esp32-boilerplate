@@ -10,12 +10,15 @@ enum class AppEventType : uint8_t {
     None = 0,
     ButtonTopClick,
     ButtonTopLongPress,
+    ButtonTopHold,
     ButtonBottomClick,
     ButtonBottomLongPress,
+    ButtonBottomHold,
     ButtonsStateChanged,
     WifiConnectionChanged,
     WifiIdentityChanged,
     SdStateChanged,
+    TimeUpdated,
     UiRefreshRequested
 };
 

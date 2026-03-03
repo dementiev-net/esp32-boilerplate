@@ -11,3 +11,9 @@ Request ESP32 Boilerplate Rollout (2026-03-03)
 [x] P3 build: разделить `debug`/`release` и снизить `CORE_DEBUG_LEVEL` для release
 [x] P3 docs: добавить troubleshooting в README (Wi-Fi portal/display/SD issues)
 [x] P3 architecture: ввести event-driven обработку событий (buttons/wifi/ui dispatcher) и слой абстракции board-пинов
+
+Request ESP32 Boilerplate Base Features (2026-03-03)
+[x] P1 buttons: добавить событие удерживания кнопок (top/bottom hold repeat) в API `buttons`
+[x] P1 time: при подключении к Wi-Fi синхронизировать точное время по NTP и выводить его на экран
+[x] P2 tests: добавить unit-тесты для удерживания кнопок (`buttons_logic`)
+[x] P2 docs: описать NTP-время и удерживание кнопок в README

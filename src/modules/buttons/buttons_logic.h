@@ -8,7 +8,8 @@
 enum class ButtonLogicEvent {
     None,
     Click,
-    LongPress
+    LongPress,
+    Hold
 };
 
 /**
@@ -19,6 +20,7 @@ struct ButtonLogicState {
     bool pressed = false;
     unsigned long pressedAt = 0;
     bool longFired = false;
+    unsigned long lastHoldAt = 0;
 };
 
 /**
@@ -28,14 +30,16 @@ struct ButtonLogicState {
  * @param nowMs Текущее время в миллисекундах.
  * @param debounceMs Время антидребезга в миллисекундах.
  * @param longPressMs Порог long-press в миллисекундах.
- * @return Событие кнопки: Click/LongPress/None.
+ * @param holdRepeatMs Интервал генерации события Hold после LongPress, миллисекунды.
+ * @return Событие кнопки: Click/LongPress/Hold/None.
  */
 ButtonLogicEvent buttonsLogicProcess(
     ButtonLogicState& state,
     bool rawPressed,
     unsigned long nowMs,
     unsigned long debounceMs,
-    unsigned long longPressMs
+    unsigned long longPressMs,
+    unsigned long holdRepeatMs
 );
 
 /**

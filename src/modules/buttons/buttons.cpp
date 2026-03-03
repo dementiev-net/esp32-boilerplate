@@ -1,16 +1,15 @@
 #include "buttons.h"
 #include "buttons_logic.h"
+#include "../../config.h"
 #include "../board/board_profile.h"
 
 // ===== CALLBACKS =====
 static void (*onTopClick)() = nullptr;
 static void (*onTopLongPress)() = nullptr;
+static void (*onTopHold)() = nullptr;
 static void (*onBottomClick)() = nullptr;
 static void (*onBottomLongPress)() = nullptr;
-
-// ===== DEBOUNCE =====
-#define DEBOUNCE_MS   50
-#define LONG_PRESS_MS 800
+static void (*onBottomHold)() = nullptr;
 
 struct ButtonState {
     uint8_t pin;
@@ -20,11 +19,20 @@ struct ButtonState {
 static ButtonState btnTop    = { 0, ButtonLogicState{} };
 static ButtonState btnBottom = { 0, ButtonLogicState{} };
 
-static void processButton(ButtonState& btn, void (*onClick)(), void (*onLong)()) {
+static void processButton(ButtonState& btn, void (*onClick)(), void (*onLong)(), void (*onHold)()) {
     bool raw = digitalRead(btn.pin) == LOW;
-    ButtonLogicEvent event = buttonsLogicProcess(btn.logic, raw, millis(), DEBOUNCE_MS, LONG_PRESS_MS);
+    ButtonLogicEvent event = buttonsLogicProcess(
+        btn.logic,
+        raw,
+        millis(),
+        BUTTON_DEBOUNCE_MS,
+        BUTTON_LONG_PRESS_MS,
+        BUTTON_HOLD_REPEAT_MS
+    );
     if (event == ButtonLogicEvent::LongPress) {
         if (onLong) onLong();
+    } else if (event == ButtonLogicEvent::Hold) {
+        if (onHold) onHold();
     } else if (event == ButtonLogicEvent::Click) {
         if (onClick) onClick();
     }
@@ -43,14 +51,16 @@ void buttonsInit() {
 }
 
 void buttonsLoop() {
-    processButton(btnTop,    onTopClick,    onTopLongPress);
-    processButton(btnBottom, onBottomClick, onBottomLongPress);
+    processButton(btnTop,    onTopClick,    onTopLongPress,    onTopHold);
+    processButton(btnBottom, onBottomClick, onBottomLongPress, onBottomHold);
 }
 
 void buttonsOnTopClick(void (*callback)())      { onTopClick      = callback; }
 void buttonsOnTopLongPress(void (*callback)())  { onTopLongPress  = callback; }
+void buttonsOnTopHold(void (*callback)())       { onTopHold       = callback; }
 void buttonsOnBottomClick(void (*callback)())   { onBottomClick   = callback; }
 void buttonsOnBottomLongPress(void (*callback)()) { onBottomLongPress = callback; }
+void buttonsOnBottomHold(void (*callback)())    { onBottomHold    = callback; }
 
 bool buttonsIsTopPressed() {
     return buttonsLogicIsPressed(btnTop.logic);

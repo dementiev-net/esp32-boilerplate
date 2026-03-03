@@ -5,19 +5,30 @@ ButtonLogicEvent buttonsLogicProcess(
     bool rawPressed,
     unsigned long nowMs,
     unsigned long debounceMs,
-    unsigned long longPressMs
+    unsigned long longPressMs,
+    unsigned long holdRepeatMs
 ) {
     if (rawPressed && !state.lastRaw) {
         state.pressed = true;
         state.pressedAt = nowMs;
         state.longFired = false;
+        state.lastHoldAt = 0;
     }
 
     if (state.pressed && !state.longFired) {
         if (nowMs - state.pressedAt >= longPressMs) {
             state.longFired = true;
+            state.lastHoldAt = nowMs;
             state.lastRaw = rawPressed;
             return ButtonLogicEvent::LongPress;
+        }
+    }
+
+    if (state.pressed && state.longFired && holdRepeatMs > 0) {
+        if (nowMs - state.lastHoldAt >= holdRepeatMs) {
+            state.lastHoldAt = nowMs;
+            state.lastRaw = rawPressed;
+            return ButtonLogicEvent::Hold;
         }
     }
 
@@ -30,6 +41,7 @@ ButtonLogicEvent buttonsLogicProcess(
             }
         }
         state.pressed = false;
+        state.lastHoldAt = 0;
     }
 
     state.lastRaw = rawPressed;

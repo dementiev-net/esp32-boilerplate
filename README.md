@@ -13,7 +13,8 @@
 
 - **Display** — инициализация дисплея, текст, цвета, примитивы
 - **WiFi** — автоподключение + неблокирующий портал настройки (WifiManager)
-- **Buttons** — обработка клика и долгого нажатия
+- **Buttons** — обработка клика, долгого нажатия и удерживания (hold repeat)
+- **Time** — синхронизация точного времени через NTP при наличии интернета
 - **Storage** — NVS (сохранение между перезагрузками) + SD карта
 
 ## Быстрый старт
@@ -79,6 +80,26 @@ ap_password=12345678
 - `SD:OK/NO/N/A` - доступность SD (есть/нет/не поддерживается).
 - `BTN T:x B:y` - текущее состояние кнопок.
 - `IP:...` - IP в `STA`, `AP:<ssid>` в `AP`.
+- `TIME:HH:MM:SS` - локальное время после NTP-синхронизации (`--:--:--` до синхронизации).
+
+## Кнопки (hold repeat)
+
+- `Click` - короткое нажатие.
+- `LongPress` - событие один раз после порога `BUTTON_LONG_PRESS_MS`.
+- `Hold` - периодическое событие после `LongPress` с интервалом `BUTTON_HOLD_REPEAT_MS`.
+
+Порог и интервалы настраиваются в `config.h`:
+- `BUTTON_DEBOUNCE_MS`
+- `BUTTON_LONG_PRESS_MS`
+- `BUTTON_HOLD_REPEAT_MS`
+
+## Точное время (NTP)
+
+- Время синхронизируется автоматически, когда есть подключение к интернету (`Wi-Fi connected`, не AP-only).
+- Серверы и таймзона настраиваются в `config.h`:
+  - `NTP_TIMEZONE`
+  - `NTP_SERVER_1`, `NTP_SERVER_2`, `NTP_SERVER_3`
+  - `NTP_RETRY_MS`
 
 ## Troubleshooting
 
@@ -136,6 +157,7 @@ src/
     ├── app/
     ├── board/
     ├── display/
+    ├── time/
     ├── wifi/
     ├── storage/
     └── buttons/

@@ -6,6 +6,7 @@
 #include "modules/wifi/wifi.h"
 #include "modules/storage/storage.h"
 #include "modules/buttons/buttons.h"
+#include "modules/time/net_time.h"
 
 static bool statusInitialized = false;
 static bool dispatcherOverflowReported = false;
@@ -19,6 +20,8 @@ struct RuntimeSnapshot {
     String modeLabel = "";
     String ip = "-";
     String ssid = "";
+    bool timeSynced = false;
+    String localTime = "--:--:--";
 };
 
 static RuntimeSnapshot lastRenderedState;
@@ -35,6 +38,8 @@ static RuntimeSnapshot readRuntimeSnapshot() {
     state.modeLabel = wifiGetModeLabel();
     state.ip = state.wifiConnected ? wifiGetIP() : "-";
     state.ssid = wifiGetSSID();
+    state.timeSynced = netTimeIsSynced();
+    state.localTime = netTimeGetLocalTimeText();
     return state;
 }
 
@@ -46,7 +51,9 @@ static bool snapshotsEqual(const RuntimeSnapshot& a, const RuntimeSnapshot& b) {
         && a.sdAvailable == b.sdAvailable
         && a.modeLabel == b.modeLabel
         && a.ip == b.ip
-        && a.ssid == b.ssid;
+        && a.ssid == b.ssid
+        && a.timeSynced == b.timeSynced
+        && a.localTime == b.localTime;
 }
 
 static void postAppEvent(AppEventType type) {
@@ -70,7 +77,7 @@ static void displayRuntimeStatus(const RuntimeSnapshot& state, bool force = fals
     statusInitialized = true;
     lastRenderedState = state;
 
-    const int statusHeight = 36;
+    const int statusHeight = 48;
     const BoardProfile& board = boardGetProfile();
     const int statusY = board.display.height - statusHeight;
     const uint16_t gray = 0x7BEF;
@@ -103,6 +110,10 @@ static void displayRuntimeStatus(const RuntimeSnapshot& state, bool force = fals
         snprintf(line3, sizeof(line3), "IP:%s", state.wifiConnected ? state.ip.c_str() : "-");
         displayPrint(2, statusY + 24, line3, state.wifiConnected ? TFT_CYAN : gray, 1);
     }
+
+    char line4[32];
+    snprintf(line4, sizeof(line4), "TIME:%s", state.localTime.c_str());
+    displayPrint(2, statusY + 36, line4, state.timeSynced ? TFT_YELLOW : gray, 1);
 }
 
 static void publishStateChangeEvents(const RuntimeSnapshot& previous, const RuntimeSnapshot& current) {
@@ -128,6 +139,11 @@ static void publishStateChangeEvents(const RuntimeSnapshot& previous, const Runt
         needUiRefresh = true;
     }
 
+    if (previous.timeSynced != current.timeSynced || previous.localTime != current.localTime) {
+        postAppEvent(AppEventType::TimeUpdated);
+        needUiRefresh = true;
+    }
+
     if (needUiRefresh) {
         postAppEvent(AppEventType::UiRefreshRequested);
     }
@@ -147,6 +163,8 @@ static void processAppEvents() {
                 Serial.println("[Button] Top long press");
                 needUiRefresh = true;
                 break;
+            case AppEventType::ButtonTopHold:
+                break;
             case AppEventType::ButtonBottomClick:
                 Serial.println("[Button] Bottom click");
                 needUiRefresh = true;
@@ -154,6 +172,8 @@ static void processAppEvents() {
             case AppEventType::ButtonBottomLongPress:
                 Serial.println("[Button] Bottom long press");
                 needUiRefresh = true;
+                break;
+            case AppEventType::ButtonBottomHold:
                 break;
             case AppEventType::ButtonsStateChanged:
                 Serial.printf(
@@ -182,6 +202,8 @@ static void processAppEvents() {
                     runtimeState.sdSupported ? 1 : 0,
                     runtimeState.sdAvailable ? 1 : 0
                 );
+                break;
+            case AppEventType::TimeUpdated:
                 break;
             case AppEventType::UiRefreshRequested:
                 needUiRefresh = true;
@@ -213,6 +235,9 @@ void setup() {
     buttonsOnTopLongPress([]() {
         postAppEvent(AppEventType::ButtonTopLongPress);
     });
+    buttonsOnTopHold([]() {
+        postAppEvent(AppEventType::ButtonTopHold);
+    });
 
     buttonsOnBottomClick([]() {
         postAppEvent(AppEventType::ButtonBottomClick);
@@ -220,6 +245,9 @@ void setup() {
 
     buttonsOnBottomLongPress([]() {
         postAppEvent(AppEventType::ButtonBottomLongPress);
+    });
+    buttonsOnBottomHold([]() {
+        postAppEvent(AppEventType::ButtonBottomHold);
     });
 
     displayClear(TFT_BLACK);
@@ -232,6 +260,7 @@ void setup() {
     }
 
     wifiInit();
+    netTimeInit();
 
     int bootCount = storageGetInt("boot_count", 0);
     bootCount++;
@@ -251,6 +280,7 @@ void setup() {
 void loop() {
     buttonsLoop();
     wifiLoop();
+    netTimeLoop(wifiIsConnected() && !wifiIsApMode());
 
     const RuntimeSnapshot newState = readRuntimeSnapshot();
     if (!runtimeInitialized) {

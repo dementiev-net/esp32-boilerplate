@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.1.0"
+#define APP_VERSION "1.2.0"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -19,6 +19,20 @@
 #define WIFI_TIMEOUT_MS  10000
 /// @brief Путь до Wi-Fi конфига на SD-карте.
 #define WIFI_CONFIG_FILE "/wifi.conf"
+
+// ===== TIME (NTP) =====
+/// @brief POSIX timezone для локального отображения NTP-времени.
+#define NTP_TIMEZONE "UTC0"
+/// @brief Основной NTP сервер.
+#define NTP_SERVER_1 "pool.ntp.org"
+/// @brief Резервный NTP сервер №2.
+#define NTP_SERVER_2 "time.google.com"
+/// @brief Резервный NTP сервер №3.
+#define NTP_SERVER_3 "time.nist.gov"
+/// @brief Интервал повторной попытки NTP-синхронизации, миллисекунды.
+#define NTP_RETRY_MS 15000
+/// @brief Минимальный UNIX timestamp для признания времени валидным.
+#define NTP_VALID_UNIX_TS 1700000000UL
 
 // ===== DISPLAY =====
 #ifdef BOARD_TDISPLAY_S3
@@ -42,6 +56,13 @@
 #endif
 
 // ===== BUTTONS =====
+/// @brief Время антидребезга кнопок, миллисекунды.
+#define BUTTON_DEBOUNCE_MS 50
+/// @brief Порог долгого нажатия, миллисекунды.
+#define BUTTON_LONG_PRESS_MS 800
+/// @brief Интервал событий удерживания после long-press, миллисекунды.
+#define BUTTON_HOLD_REPEAT_MS 250
+
 #ifdef BOARD_TDISPLAY_S3
   /// @brief GPIO верхней кнопки.
   #define BTN_TOP    14
