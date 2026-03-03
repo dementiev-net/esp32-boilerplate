@@ -8,6 +8,6 @@ Request ESP32 Boilerplate Rollout (2026-03-03)
 [x] P3 tests: вынести парсинг `/wifi.conf` в отдельный модуль и покрыть unit-тестами (native)
 [x] P3 tests: добавить unit-тесты для `buttons` (click/long press) и `storage` (read/write edge cases)
 [ ] P3 ci: добавить CI-сборку для `lilygo-t-display-s3` и `lilygo-t-qt-pro`
-[ ] P3 build: разделить `debug`/`release` и снизить `CORE_DEBUG_LEVEL` для release
+[x] P3 build: разделить `debug`/`release` и снизить `CORE_DEBUG_LEVEL` для release
 [ ] P3 docs: добавить troubleshooting в README (Wi-Fi portal/display/SD issues)
 [ ] P3 architecture: ввести event-driven обработку событий (buttons/wifi/ui dispatcher) и слой абстракции board-пинов

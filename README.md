@@ -20,7 +20,9 @@
 
 1. Клонировать репозиторий
 2. Открыть в VS Code + PlatformIO
-3. Выбрать окружение (`lilygo-t-display-s3` или `lilygo-t-qt-pro`)
+3. Выбрать окружение:
+   - release: `lilygo-t-display-s3` / `lilygo-t-qt-pro`
+   - debug: `lilygo-t-display-s3-debug` / `lilygo-t-qt-pro-debug`
 4. Build & Upload
 
 ## Первый запуск
