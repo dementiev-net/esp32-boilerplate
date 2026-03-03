@@ -2,6 +2,7 @@
 
 #include "../../config.h"
 #include "../buttons/buttons.h"
+#include "../display/display.h"
 #include "../power/battery.h"
 #include "../storage/storage.h"
 #include "../net/net_http_demo.h"
@@ -49,6 +50,10 @@ RuntimeSnapshot runtimeStateRead(RuntimeStateTracker& tracker, unsigned long now
     state.netValue = netDemoGetValue();
     state.netUiText = netDemoGetUiText();
     state.batterySupported = batteryIsSupported();
+    state.backlightSupported = displayBrightnessSupported();
+    state.backlightPercent = state.backlightSupported
+        ? static_cast<int>(displayGetBrightnessPercent())
+        : -1;
 
     if (!state.timeSynced) {
         tracker.cachedUiTime = "--:--:--";
@@ -92,5 +97,7 @@ bool runtimeStateEquals(const RuntimeSnapshot& a, const RuntimeSnapshot& b) {
         && a.netUiText == b.netUiText
         && a.batterySupported == b.batterySupported
         && a.batteryMillivolts == b.batteryMillivolts
-        && a.batteryPercent == b.batteryPercent;
+        && a.batteryPercent == b.batteryPercent
+        && a.backlightSupported == b.backlightSupported
+        && a.backlightPercent == b.backlightPercent;
 }

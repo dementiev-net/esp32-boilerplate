@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.13"
+#define APP_VERSION "1.2.14"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -75,6 +75,14 @@
 // ===== DISPLAY =====
 /// @brief Минимальное время показа boot-заставки, миллисекунды.
 #define BOOT_SPLASH_MIN_MS 1800
+/// @brief Яркость подсветки по умолчанию после `displayInit`, проценты (0..100).
+#define DISPLAY_BRIGHTNESS_DEFAULT_PERCENT 85
+/// @brief Частота PWM подсветки, герцы.
+#define DISPLAY_BRIGHTNESS_PWM_FREQ_HZ 5000
+/// @brief Разрешение PWM подсветки, биты.
+#define DISPLAY_BRIGHTNESS_PWM_BITS 8
+/// @brief Канал LEDC для PWM подсветки.
+#define DISPLAY_BRIGHTNESS_PWM_CHANNEL 7
 
 // ===== BATTERY =====
 /// @brief Период выборки напряжения батареи в runtime, миллисекунды.

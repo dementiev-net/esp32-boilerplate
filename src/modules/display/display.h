@@ -47,3 +47,36 @@ void displayDrawLine(int x1, int y1, int x2, int y2, uint32_t color);
  * @param right Текст справа.
  */
 void displayStatusBar(const char* left, const char* right);
+
+/**
+ * @brief Возвращает поддержку регулировки яркости подсветки.
+ * @return true если на текущей плате доступно PWM-управление подсветкой.
+ * @details
+ * - Можно вызывать из `setup()`/`loop()` после `displayInit()`.
+ * - Неблокирующая, без побочных эффектов.
+ * - Ограничения по платам: зависит от наличия `TFT_BL` в board-specific setup.
+ */
+bool displayBrightnessSupported();
+
+/**
+ * @brief Возвращает текущую яркость подсветки в процентах.
+ * @return Яркость `0..100`.
+ * @details
+ * - Можно вызывать из `setup()`/`loop()` после `displayInit()`.
+ * - Неблокирующая, без побочных эффектов.
+ * - Если PWM недоступен, возвращает последнее примененное значение по умолчанию.
+ */
+uint8_t displayGetBrightnessPercent();
+
+/**
+ * @brief Устанавливает яркость подсветки в процентах.
+ * @param percent Яркость `0..100`.
+ * @return true если значение применено, false если управление яркостью недоступно.
+ * @details
+ * - Вызывать из `setup()`/`loop()` по событию UI/shell.
+ * - Неблокирующая (запись в регистр PWM).
+ * - Побочные эффекты: меняет duty PWM подсветки дисплея (GPIO `TFT_BL`).
+ * - Ограничения по платам: работает только при наличии `TFT_BL` и активного LEDC.
+ * - Не ISR-safe.
+ */
+bool displaySetBrightnessPercent(uint8_t percent);

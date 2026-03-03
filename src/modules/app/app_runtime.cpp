@@ -60,6 +60,12 @@ void appRuntimePublishStateChanges(
         needUiRefresh = true;
     }
 
+    if (previous.backlightSupported != current.backlightSupported
+        || previous.backlightPercent != current.backlightPercent) {
+        appRuntimePostEvent(AppEventType::BrightnessUpdated);
+        needUiRefresh = true;
+    }
+
     if (needUiRefresh) {
         appRuntimePostEvent(AppEventType::UiRefreshRequested);
     }
@@ -148,6 +154,13 @@ AppRuntimeDrainResult appRuntimeDrainEvents(
                     Serial.printf("[Runtime] VBAT=%d%% (%dmV)\n", runtimeState.batteryPercent, runtimeState.batteryMillivolts);
                 } else {
                     Serial.println("[Runtime] VBAT unavailable");
+                }
+                break;
+            case AppEventType::BrightnessUpdated:
+                if (runtimeState.backlightSupported && runtimeState.backlightPercent >= 0) {
+                    Serial.printf("[Runtime] Backlight=%d%%\n", runtimeState.backlightPercent);
+                } else {
+                    Serial.println("[Runtime] Backlight control unavailable");
                 }
                 break;
             case AppEventType::UiRefreshRequested:

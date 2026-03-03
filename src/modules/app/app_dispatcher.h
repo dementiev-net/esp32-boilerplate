@@ -21,6 +21,7 @@ enum class AppEventType : uint8_t {
     TimeUpdated,
     NetUpdated,
     BatteryUpdated,
+    BrightnessUpdated,
     UiRefreshRequested
 };
 

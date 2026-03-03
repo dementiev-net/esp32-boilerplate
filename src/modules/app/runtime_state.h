@@ -25,6 +25,8 @@ struct RuntimeSnapshot {
     bool batterySupported = false;
     int batteryMillivolts = -1;
     int batteryPercent = -1;
+    bool backlightSupported = false;
+    int backlightPercent = -1;
 };
 
 /**

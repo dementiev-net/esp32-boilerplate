@@ -27,10 +27,12 @@
 | NVS (Preferences) | ✓ | ✓ | `NVS_NAMESPACE=boilerplate` |
 | NTP время при интернете | ✓ | ✓ | Показывается в статусе `TIME` |
 | Boot preloader | ✓ | ✓ | Логотип + прогресс загрузки |
+| Яркость подсветки (PWM) | ✓ | ✓ | Команда shell `brightness 0..100` |
 
 ## Что включено
 
 - **Display** — инициализация дисплея, текст, цвета, примитивы
+- **Display Brightness** — PWM-управление подсветкой (`0..100%`) с выводом в статус
 - **WiFi** — автоподключение + неблокирующий портал настройки (WifiManager)
 - **Buttons** — обработка клика, долгого нажатия и удерживания (hold repeat)
 - **Time** — синхронизация точного времени через NTP при наличии интернета
@@ -105,9 +107,13 @@
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
 9. Net demo:
-   - по умолчанию выключен (`FEATURE_NET_HTTP=0`) для экономии флеша;
+   - по умолчанию включен (`FEATURE_NET_HTTP=1`);
    - при включении и наличии интернета в Serial появляется `"[NET] amount=..."`,
      а в статус-панели — строка `NET:...`.
+10. Brightness:
+   - команда `brightness` показывает текущую яркость;
+   - команда `brightness 30` применяет новый уровень подсветки;
+   - в статус-панели в строке `TIME/VB` выводится `BL:xx%`.
 
 ### T-QT Pro
 
@@ -132,8 +138,13 @@
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
 9. Net demo:
-   - при Wi-Fi интернете в Serial появляется строка вида `"[NET] amount=..."`;
-   - в нижней статус-панели отображается строка `NET:...`.
+   - по умолчанию выключен (`FEATURE_NET_HTTP=0`) для экономии флеша;
+   - при включении и наличии интернета в Serial появляется `"[NET] amount=..."`,
+     а в статус-панели — строка `NET:...`.
+10. Brightness:
+   - команда `brightness` показывает текущую яркость;
+   - команда `brightness 30` применяет новый уровень подсветки;
+   - в статус-панели в строке `TIME/VB` выводится `BL:xx%`.
 
 ## Режимы Wi-Fi через файловый конфиг (`/wifi.conf`)
 
@@ -202,6 +213,7 @@ ap_password=12345678
 - `IP:...` - IP в `STA`, `AP:<ssid>` в `AP`.
 - `TIME:HH:MM:SS` - локальное время после NTP-синхронизации (`--:--:--` до синхронизации).
 - `VB:xx%` - оценка заряда батареи в процентах (если ADC батареи доступен на плате).
+- `BL:xx%` - текущая яркость подсветки дисплея.
 - `NET:...` - результат demo HTTP JSON запроса (`NET:OFF` без интернета, `NET:ERR` при ошибке).
 
 ## Кнопки (hold repeat)
@@ -238,6 +250,18 @@ ap_password=12345678
 - `NET_DEMO_REQUEST_INTERVAL_MS`
 - `NET_DEMO_HTTP_TIMEOUT_MS`
 - `NET_DEMO_UI_MAX_VALUE_LEN`
+
+## Яркость подсветки
+
+- Подсветка управляется через PWM (LEDC) по пину `TFT_BL` из board-specific setup.
+- Команда shell:
+  - `brightness` — показать текущее значение;
+  - `brightness <0..100>` — установить яркость в процентах.
+- Параметры в `config.h`:
+  - `DISPLAY_BRIGHTNESS_DEFAULT_PERCENT`
+  - `DISPLAY_BRIGHTNESS_PWM_FREQ_HZ`
+  - `DISPLAY_BRIGHTNESS_PWM_BITS`
+  - `DISPLAY_BRIGHTNESS_PWM_CHANNEL`
 
 ## Энергосбережение
 
@@ -341,6 +365,7 @@ GATT service (`BLE_SERVICE_UUID`) содержит характеристики:
 - `status`
 - `wifi`
 - `net`
+- `brightness [0..100]`
 - `storage`
 - `cat <path>`
 - `write <path> <text>`

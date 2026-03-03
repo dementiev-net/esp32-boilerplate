@@ -6,6 +6,7 @@
 #if FEATURE_USB_SHELL
 #include "../ble/ble.h"
 #include "../board/board_profile.h"
+#include "../display/display.h"
 #include "../net/net_http_demo.h"
 #include "../ota/ota.h"
 #include "../power/sleep.h"
@@ -28,6 +29,7 @@ static void printHelp() {
     Serial.println("  status                   - общий статус runtime");
     Serial.println("  wifi                     - статус Wi-Fi");
     Serial.println("  net                      - статус HTTP JSON demo");
+    Serial.println("  brightness [0..100]      - статус/установка яркости подсветки");
     Serial.println("  storage                  - статус файлового backend");
     Serial.println("  cat <path>               - прочитать файл");
     Serial.println("  write <path> <text>      - перезаписать файл");
@@ -77,6 +79,14 @@ static void printNetStatus() {
     );
 }
 
+static void printBrightnessStatus() {
+    if (!displayBrightnessSupported()) {
+        Serial.println("[display] brightness control unavailable");
+        return;
+    }
+    Serial.printf("[display] brightness=%u%%\n", static_cast<unsigned>(displayGetBrightnessPercent()));
+}
+
 static void printRuntimeStatus() {
     const BoardProfile& board = boardGetProfile();
     Serial.printf("[app] %s v%s\n", APP_NAME, APP_VERSION);
@@ -101,6 +111,7 @@ static void printRuntimeStatus() {
     );
     printWifiStatus();
     printNetStatus();
+    printBrightnessStatus();
     printStorageStatus();
     Serial.printf(
         "[wireless] ota_ready=%s ble_ready=%s ble_client=%s\n",
@@ -148,6 +159,50 @@ static bool splitPathAndText(const String& input, String& path, String& text) {
     text = trimmed.substring(separator + 1);
     text.trim();
     return path.length() > 0;
+}
+
+static bool parsePercentArg(const String& input, uint8_t& outPercent) {
+    String trimmed = input;
+    trimmed.trim();
+    if (trimmed.length() == 0) {
+        return false;
+    }
+
+    for (size_t i = 0; i < trimmed.length(); i++) {
+        if (!isDigit(trimmed[i])) {
+            return false;
+        }
+    }
+
+    const long parsed = trimmed.toInt();
+    if (parsed < 0 || parsed > 100) {
+        return false;
+    }
+
+    outPercent = static_cast<uint8_t>(parsed);
+    return true;
+}
+
+static void handleBrightness(const String& args) {
+    String trimmed = args;
+    trimmed.trim();
+    if (trimmed.length() == 0) {
+        printBrightnessStatus();
+        return;
+    }
+
+    uint8_t percent = 0;
+    if (!parsePercentArg(trimmed, percent)) {
+        Serial.println("[usb] usage: brightness <0..100>");
+        return;
+    }
+
+    if (!displaySetBrightnessPercent(percent)) {
+        Serial.println("[usb] brightness control unavailable");
+        return;
+    }
+
+    Serial.printf("[usb] brightness set to %u%%\n", static_cast<unsigned>(displayGetBrightnessPercent()));
 }
 
 static void handleCat(const String& args) {
@@ -216,6 +271,10 @@ static void executeCommand(const String& rawLine) {
     }
     if (cmdLower == "net") {
         printNetStatus();
+        return;
+    }
+    if (cmdLower == "brightness") {
+        handleBrightness(args);
         return;
     }
     if (cmdLower == "storage") {

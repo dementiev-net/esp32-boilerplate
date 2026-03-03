@@ -1,5 +1,7 @@
 #include "status_panel.h"
 
+#include <cstring>
+
 #include "../board/board_profile.h"
 #include "../display/display.h"
 
@@ -122,24 +124,72 @@ void statusPanelRender(const RuntimeSnapshot& state, bool force) {
 
     char line4Buffer[40];
     const bool batteryValid = state.batterySupported && state.batteryPercent >= 0;
-    if (state.batterySupported) {
-        if (batteryValid) {
-            if (board.display.width >= 200) {
-                snprintf(line4Buffer, sizeof(line4Buffer), "TIME:%s VB:%d%%", state.localTime.c_str(), state.batteryPercent);
-            } else {
-                snprintf(line4Buffer, sizeof(line4Buffer), "T:%s B:%d%%", state.localTime.c_str(), state.batteryPercent);
-            }
-        } else if (board.display.width >= 200) {
-            snprintf(line4Buffer, sizeof(line4Buffer), "TIME:%s VB:--%%", state.localTime.c_str());
+    const bool backlightValid = state.backlightSupported && state.backlightPercent >= 0;
+    char timeCompact[6];
+    memset(timeCompact, 0, sizeof(timeCompact));
+    const size_t sourceLen = state.localTime.length();
+    const size_t copyLen = sourceLen >= 5 ? 5 : sourceLen;
+    if (copyLen > 0) {
+        memcpy(timeCompact, state.localTime.c_str(), copyLen);
+    } else {
+        strncpy(timeCompact, "--:--", sizeof(timeCompact) - 1);
+    }
+    char batteryText[8];
+    char backlightText[8];
+    snprintf(
+        batteryText,
+        sizeof(batteryText),
+        batteryValid ? "%d%%" : "--%%",
+        batteryValid ? state.batteryPercent : 0
+    );
+    snprintf(
+        backlightText,
+        sizeof(backlightText),
+        backlightValid ? "%d%%" : "--%%",
+        backlightValid ? state.backlightPercent : 0
+    );
+    if (board.display.width >= 200) {
+        if (state.batterySupported) {
+            snprintf(
+                line4Buffer,
+                sizeof(line4Buffer),
+                "TIME:%s VB:%s BL:%s",
+                state.localTime.c_str(),
+                batteryText,
+                backlightText
+            );
         } else {
-            snprintf(line4Buffer, sizeof(line4Buffer), "T:%s B:--%%", state.localTime.c_str());
+            snprintf(
+                line4Buffer,
+                sizeof(line4Buffer),
+                "TIME:%s BL:%s",
+                state.localTime.c_str(),
+                backlightText
+            );
         }
     } else {
-        snprintf(line4Buffer, sizeof(line4Buffer), "TIME:%s", state.localTime.c_str());
+        if (state.batterySupported) {
+            snprintf(
+                line4Buffer,
+                sizeof(line4Buffer),
+                "T:%s B:%s L:%s",
+                timeCompact,
+                batteryText,
+                backlightText
+            );
+        } else {
+            snprintf(
+                line4Buffer,
+                sizeof(line4Buffer),
+                "T:%s L:%s",
+                timeCompact,
+                backlightText
+            );
+        }
     }
 
     uint16_t line4Color = state.timeSynced ? TFT_YELLOW : gray;
-    if (!state.timeSynced && batteryValid) {
+    if (!state.timeSynced && (batteryValid || backlightValid)) {
         line4Color = TFT_CYAN;
     }
     statusLineRender(
