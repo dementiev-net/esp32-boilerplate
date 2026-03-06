@@ -17,6 +17,7 @@
 static bool initialized = false;
 static String lineBuffer = "";
 static const size_t kMaxLineLength = 200;
+static bool previousWasCarriageReturn = false;
 
 static void printPrompt() {
     Serial.print("usb> ");
@@ -324,6 +325,7 @@ void usbShellInit() {
 
     initialized = true;
     lineBuffer = "";
+    previousWasCarriageReturn = false;
     Serial.println("[USB] CDC shell ready. Type 'help'.");
     printPrompt();
 }
@@ -337,15 +339,25 @@ void usbShellLoop() {
         const char c = static_cast<char>(Serial.read());
 
         if (c == '\r') {
+            executeCommand(lineBuffer);
+            lineBuffer = "";
+            printPrompt();
+            previousWasCarriageReturn = true;
             continue;
         }
 
         if (c == '\n') {
+            if (previousWasCarriageReturn) {
+                previousWasCarriageReturn = false;
+                continue;
+            }
             executeCommand(lineBuffer);
             lineBuffer = "";
             printPrompt();
             continue;
         }
+
+        previousWasCarriageReturn = false;
 
         if (lineBuffer.length() >= static_cast<int>(kMaxLineLength)) {
             lineBuffer = "";
