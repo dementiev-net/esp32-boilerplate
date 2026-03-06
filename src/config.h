@@ -2,7 +2,7 @@
 
 // ===== VERSION =====
 /// @brief Версия приложения для вывода на экран/в логи.
-#define APP_VERSION "1.2.20"
+#define APP_VERSION "1.2.21"
 /// @brief Короткое имя приложения для UI/логов.
 #define APP_NAME    "Boilerplate"
 
@@ -23,6 +23,10 @@
 #ifndef FEATURE_USB_SHELL
   #define FEATURE_USB_SHELL 1
 #endif
+/// @brief Включение Telnet shell по Wi-Fi: 1 = включен, 0 = выключен.
+#ifndef FEATURE_TELNET_SHELL
+  #define FEATURE_TELNET_SHELL 1
+#endif
 /// @brief Включение demo HTTP JSON клиента: 1 = включен, 0 = исключен из runtime.
 #ifndef FEATURE_NET_HTTP
   #define FEATURE_NET_HTTP 1
@@ -39,6 +43,12 @@
 // ===== SERIAL =====
 /// @brief Скорость UART (baud) для Serial Monitor.
 #define SERIAL_BAUD_RATE 115200
+
+// ===== TELNET SHELL =====
+/// @brief TCP порт Telnet shell.
+#define TELNET_SHELL_PORT 23
+/// @brief Максимальная длина одной командной строки Telnet shell, байты.
+#define TELNET_SHELL_MAX_LINE_LEN 200
 
 // ===== WIFI =====
 /// @brief SSID точки доступа по умолчанию (режим AP/AUTO).

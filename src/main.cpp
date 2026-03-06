@@ -14,6 +14,7 @@
 #include "modules/system/reliability.h"
 #include "modules/system/self_test.h"
 #include "modules/storage/storage.h"
+#include "modules/telnet/telnet_shell.h"
 #include "modules/time/net_time.h"
 #include "modules/usb/usb_shell.h"
 #include "modules/wifi/wifi.h"
@@ -110,6 +111,13 @@ void setup() {
     Serial.println("[USB] Shell disabled by build profile");
     #endif
 
+    #if FEATURE_TELNET_SHELL
+    bootPreloaderStep(90, "Telnet shell");
+    telnetShellInit();
+    #else
+    Serial.println("[Telnet] Shell disabled by build profile");
+    #endif
+
     bootPreloaderStep(92, "Time init");
     netTimeInit();
 
@@ -201,6 +209,9 @@ void loop() {
     wifiLoop();
     #if FEATURE_USB_SHELL
     usbShellLoop();
+    #endif
+    #if FEATURE_TELNET_SHELL
+    telnetShellLoop();
     #endif
     #if FEATURE_BLE
     bleLoop();

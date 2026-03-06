@@ -21,6 +21,7 @@
 | OTA update | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_OTA` |
 | BLE advertising + GATT | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_BLE` |
 | USB CDC shell | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_USB_SHELL` |
+| Telnet shell (TCP) | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_TELNET_SHELL` |
 | HTTP JSON demo (internet) | ✓ (по умолчанию) | ○ (опционально) | `FEATURE_NET_HTTP` |
 | Watchdog + reset diagnostics | ✓ (по умолчанию) | ✓ (по умолчанию) | `FEATURE_WATCHDOG` |
 | LittleFS fallback | ○ (опционально) | ✓ (по умолчанию) | `FEATURE_LITTLEFS` |
@@ -42,6 +43,7 @@
 - **OTA** — обновление прошивки по Wi-Fi (push OTA, без собственного сервера, опционально для lightweight-профиля)
 - **BLE** — advertising + GATT service (battery %, uptime, version, опционально для lightweight-профиля)
 - **USB shell** — минимальный командный интерфейс по CDC для диагностики и сервисных операций
+- **Telnet shell** — удаленный командный интерфейс по Wi-Fi (`TCP:23`) с теми же командами, что USB shell
 - **Net demo** — периодический HTTP JSON запрос из интернета и вывод значения на экран/в Serial
 - **Reliability** — watchdog loop-задачи и диагностика причины reset
 - **Self-test** — стартовая проверка display/buttons/wifi/storage/battery с итогом PASS/FAIL
@@ -58,8 +60,8 @@
 
 По умолчанию в `platformio.ini` заданы такие профили:
 
-- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=1`, `FEATURE_WATCHDOG=1` (full-профиль).
-- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1`, `FEATURE_NET_HTTP=0`, `FEATURE_WATCHDOG=1` (lightweight-профиль с файловым fallback).
+- `lilygo-t-display-s3`: `FEATURE_OTA=1`, `FEATURE_BLE=1`, `FEATURE_LITTLEFS=0`, `FEATURE_USB_SHELL=1`, `FEATURE_TELNET_SHELL=1`, `FEATURE_NET_HTTP=1`, `FEATURE_WATCHDOG=1` (full-профиль).
+- `lilygo-t-qt-pro`: `FEATURE_OTA=0`, `FEATURE_BLE=0`, `FEATURE_LITTLEFS=1`, `FEATURE_USB_SHELL=1`, `FEATURE_TELNET_SHELL=1`, `FEATURE_NET_HTTP=0`, `FEATURE_WATCHDOG=1` (lightweight-профиль с файловым fallback).
 
 При необходимости фичи можно включать обратно через `build_flags`:
 
@@ -68,6 +70,7 @@
 -DFEATURE_BLE=1
 -DFEATURE_LITTLEFS=1
 -DFEATURE_USB_SHELL=1
+-DFEATURE_TELNET_SHELL=1
 -DFEATURE_NET_HTTP=1
 -DFEATURE_WATCHDOG=1
 ```
@@ -108,15 +111,18 @@
 8. USB shell:
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
-9. Net demo:
+9. Telnet shell:
+   - при подключенном Wi-Fi в Serial есть строка `"[Telnet] Ready: ip=... port=23"`;
+   - подключение по TCP (`telnet <ip> 23` или `nc <ip> 23`) открывает prompt `telnet>`.
+10. Net demo:
    - по умолчанию включен (`FEATURE_NET_HTTP=1`);
    - при включении и наличии интернета в Serial появляется `"[NET] amount=..."`,
      а в статус-панели — строка `NET:...`.
-10. Brightness:
+11. Brightness:
    - команда `brightness` показывает текущую яркость;
    - команда `brightness 30` применяет новый уровень подсветки;
    - в статус-панели в строке `TIME/VB` выводится `BL:xx%`.
-11. Self-test:
+12. Self-test:
    - в Serial после старта есть строки `"[SelfTest] ..."` и итог `"[SelfTest] RESULT: PASS/FAIL"`;
    - на экране отображается блок `SELFTEST:PASS/FAIL`.
 
@@ -142,15 +148,18 @@
 8. USB shell:
    - в Serial после загрузки есть строка `"[USB] CDC shell ready. Type 'help'."`;
    - команда `status` печатает текущие runtime-параметры.
-9. Net demo:
+9. Telnet shell:
+   - при подключенном Wi-Fi в Serial есть строка `"[Telnet] Ready: ip=... port=23"`;
+   - подключение по TCP (`telnet <ip> 23` или `nc <ip> 23`) открывает prompt `telnet>`.
+10. Net demo:
    - по умолчанию выключен (`FEATURE_NET_HTTP=0`) для экономии флеша;
    - при включении и наличии интернета в Serial появляется `"[NET] amount=..."`,
      а в статус-панели — строка `NET:...`.
-10. Brightness:
+11. Brightness:
    - команда `brightness` показывает текущую яркость;
    - команда `brightness 30` применяет новый уровень подсветки;
    - в статус-панели в строке `TIME/VB` выводится `BL:xx%`.
-11. Self-test:
+12. Self-test:
    - в Serial после старта есть строки `"[SelfTest] ..."` и итог `"[SelfTest] RESULT: PASS/FAIL"`;
    - на экране отображается блок `SELFTEST:PASS/FAIL`.
 
@@ -401,6 +410,15 @@ GATT service (`BLE_SERVICE_UUID`) содержит характеристики:
 - reset reason (`reset=<label>(<code>)`);
 - состояние watchdog (`wdt=on/off`).
 
+## Telnet shell (Wi-Fi)
+
+При `FEATURE_TELNET_SHELL=1` shell доступен по TCP после подключения к Wi-Fi:
+- в Serial появляется строка `"[Telnet] Ready: ip=... port=23"`;
+- подключение: `telnet <ip_платы> 23` или `nc <ip_платы> 23`;
+
+Prompt в сессии: `telnet>`.
+Поддерживаются те же команды, что и в USB shell.
+
 ## Troubleshooting
 
 ### Wi-Fi portal не открывается
@@ -461,6 +479,8 @@ src/
     ├── power/
     ├── display/
     ├── time/
+    ├── telnet/
+    ├── shell/
     ├── usb/
     ├── net/
     ├── system/
